@@ -14,7 +14,14 @@ class FactoryController {
   getAllFactory = async (req, res, next) => {
     new SuccessResponse({
       message: "Get all factory success!",
-      metadata: await FactoryService.findAllFactory(),
+      metadata: await FactoryService.findAllFactoryWithEmployeeCount(),
+    }).send(res);
+  };
+
+  getFactoryById = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get factory by id success!",
+      metadata: await FactoryService.findFactoryById(req.params.id),
     }).send(res);
   };
 

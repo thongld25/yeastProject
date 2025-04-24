@@ -7,6 +7,10 @@ const COLLECTION_NAME = 'measurements';
 
 // Declare the Schema of the Mongo model
 var measurementSchema = new mongoose.Schema({
+    name:{
+        type:String,
+        required:true
+    },
     experimentId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Experiment',
@@ -15,10 +19,11 @@ var measurementSchema = new mongoose.Schema({
     images:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Image'
-    }]
-},{
-    timestamps:true,
-    collection:COLLECTION_NAME
+    }], 
+    time:{
+        type:Date,
+        default:Date.now
+    },
 });
 
 //Export the model

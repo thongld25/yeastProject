@@ -10,6 +10,7 @@ const router = express.Router();
 router.use(authentication);
 
 router.post("/add", asyncHandler(userController.createUser));
-router.get("/factory", asyncHandler(userController.getUserOfFactory));
+router.get("/factory/:factoryId", asyncHandler(userController.getUserOfFactory));
+router.get("/:userId", asyncHandler(userController.getUserById));
 
 module.exports = router;

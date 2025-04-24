@@ -5,7 +5,7 @@ const Grid = require("gridfs-stream");
 require("dotenv").config();
 
 const connectString = process.env.ATLAS_URI;
-const connectStringLocal = `mongodb://127.0.0.1:27017/labdb`;
+const connectStringLocal = `mongodb://localhost:27017/test?replicaSet=rs0`;
 
 class Database {
   constructor() {
@@ -19,7 +19,7 @@ class Database {
     // console.log(`Attempting to connect to MongoDB at ${connectString}`);
 
     mongoose
-      .connect(connectString)
+      .connect(connectStringLocal)
       .then((conn) => {
         console.log("✅ Database connection successful");
 

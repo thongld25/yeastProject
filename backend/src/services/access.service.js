@@ -14,8 +14,32 @@ const {
   ForbiddenError,
 } = require("../core/error.response");
 const UserService = require("./user.service");
+const { access } = require("fs");
 
 class AccessService {
+
+  static getUserProfile = async ( userId) => {
+    const foundUser = await UserService.findById(userId);
+    if (!foundUser) {
+      throw new BadRequestError("Error: User not found");
+    }
+    const tokens = await KeyTokenService.findByUserId(userId);
+    if (!tokens) {
+      throw new BadRequestError("Error: Token not found");
+    }
+
+    return {
+      user: {
+        _id: foundUser._id,
+        name: foundUser.name,
+        email: foundUser.email,
+        role: foundUser.role,
+        accessToken: tokens.publicKey,
+        refreshToken: tokens.refreshToken,
+      },
+    };
+  };
+
   /*
   check this token used
   */
@@ -95,11 +119,14 @@ class AccessService {
       userId,
     });
     return {
-      user: getInfoData({
-        fileds: ["_id", "name", "email", "role"],
-        object: foundUser,
-      }),
-      tokens,
+      user: {
+        _id: foundUser._id,
+        name: foundUser.name,
+        email: foundUser.email,
+        role: foundUser.role,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      },
     };
   };
 

@@ -5,11 +5,11 @@ const {SuccessResponse} = require("../core/success.response");
 
 class ExperimentController {
     createExperiment = async (req, res, next) => {
-        const {title, description} = req.body;
+        const {title, description, time} = req.body;
         const userId = req.user.userId;
         new SuccessResponse({
             message: "Create experiment success!",
-            metadata: await ExperimentService.createExperiment({title, description, userId}),
+            metadata: await ExperimentService.createExperiment({title, description, time, userId}),
         }).send(res);
     }
 

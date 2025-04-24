@@ -25,14 +25,21 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["manager", "employee"],
+      enum: ["manager", "employee", "admin"],
       required: true,
     },
     factoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Factory",
       required: true,
-    }
+    },
+    gender: {
+      type: String,
+      enum: ["male", "fermale"],
+    },
+    birthDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

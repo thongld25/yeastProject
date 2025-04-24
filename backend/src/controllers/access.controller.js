@@ -4,6 +4,14 @@ const AccessService = require("../services/access.service");
 const { OK, CREATED, SuccessResponse } = require("../core/success.response");
 
 class AccessController {
+
+  getUserProfile = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get user profile success!",
+      metadata: await AccessService.getUserProfile(req.user.userId),
+    }).send(res);
+  }
+
   handlerRefreshToken = async (req, res, next) => {
     new SuccessResponse({
       message: "Get token success!",

@@ -18,5 +18,6 @@ router.post(
   "/refresh-token",
   asyncHandler(accessController.handlerRefreshToken)
 );
+router.get("/profile", asyncHandler(accessController.getUserProfile));
 
 module.exports = router;

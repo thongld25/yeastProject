@@ -25,6 +25,10 @@ var ExperimentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    time: {
+      type: Date,
+      default: Date.now,
+    }
   },
   {
     timestamps: true,
