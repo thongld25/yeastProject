@@ -23,19 +23,30 @@ const AnalysisImage = () => {
       console.log(res);
       if (res.status === 200) {
         setImage(res.metadata);
-        const stats = {
-          normal: 0,
-          abnormal: 0,
-          normal_2x: 0,
-          abnormal_2x: 0,
-        };
+        let stats;
 
-        res.metadata.bacteriaData?.forEach((cell) => {
-          if (cell.type && stats.hasOwnProperty(cell.type)) {
-            stats[cell.type]++;
-          }
-        });
-
+        if (res.metadata.imageType === "methylene") {
+          stats = {
+            alive: 0,
+            dead: 0,
+          };
+          res.metadata.bacteriaData?.forEach((cell) => {
+            if (cell.status === "alive") stats.alive++;
+            else if (cell.status === "dead") stats.dead++;
+          });
+        } else {
+          stats = {
+            normal: 0,
+            abnormal: 0,
+            normal_2x: 0,
+            abnormal_2x: 0,
+          };
+          res.metadata.bacteriaData?.forEach((cell) => {
+            if (cell.type && stats.hasOwnProperty(cell.type)) {
+              stats[cell.type]++;
+            }
+          });
+        }
         setCellStats(stats);
       }
     } catch (error) {
@@ -46,7 +57,10 @@ const AnalysisImage = () => {
 
   const LegendBox = ({ color, label }) => (
     <div className="flex items-center gap-2">
-      <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: color }}></div>
+      <div
+        className="w-4 h-4 rounded-sm"
+        style={{ backgroundColor: color }}
+      ></div>
       <span className="text-sm">{label}</span>
     </div>
   );
@@ -81,16 +95,16 @@ const AnalysisImage = () => {
           )}
         </div>
 
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Ảnh mask</h2>
-          {image && (
+        {image?.imageType !== "methylene" && image?.maskImage && (
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Ảnh mask</h2>
             <img
               src={`data:image/png;base64,${image.maskImage}`}
               alt="Mask"
               className="w-full rounded shadow"
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Modal hiển thị ảnh phân tích phóng to */}
@@ -130,7 +144,7 @@ const AnalysisImage = () => {
           onClick={() => setSelectedCell(null)}
         >
           <div
-            className="bg-white p-4 rounded shadow-lg max-w-[90%] max-h-[90%]"
+            className="bg-white p-4 rounded shadow-lg max-w-[90%] max-h-[90%] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold mb-2">
@@ -139,8 +153,42 @@ const AnalysisImage = () => {
             <img
               src={`data:image/png;base64,${selectedCell.image}`}
               alt={`Bacteria ${selectedCell.cell_id}`}
-              className="max-w-full max-h-[80vh] object-contain"
+              className="max-w-full max-h-[85vh] object-contain mb-4"
             />
+
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <strong>Diện tích (area):</strong> {selectedCell.area}
+              </div>
+              <div>
+                <strong>Chu vi (perimeter):</strong> {selectedCell.perimeter}
+              </div>
+              <div>
+                <strong>Độ tròn (circularity):</strong>{" "}
+                {selectedCell.circularity}
+              </div>
+              <div>
+                <strong>Đường kính lồi (CE_diameterconvexity):</strong>{" "}
+                {selectedCell.CE_diameterconvexity}
+              </div>
+              <div>
+                <strong>Trục lớn (major axis):</strong>{" "}
+                {selectedCell.major_axis_length}
+              </div>
+              <div>
+                <strong>Trục nhỏ (minor axis):</strong>{" "}
+                {selectedCell.minor_axis_length}
+              </div>
+              <div>
+                <strong>Tỉ lệ khung hình (aspect ratio):</strong>{" "}
+                {selectedCell.aspect_ratio}
+              </div>
+              <div>
+                <strong>Khoảng cách lớn nhất (max distance):</strong>{" "}
+                {selectedCell.max_distance}
+              </div>
+            </div>
+
             <button
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
               onClick={() => setSelectedCell(null)}
@@ -150,40 +198,60 @@ const AnalysisImage = () => {
           </div>
         </div>
       )}
-    {cellStats && (
-  <>
-    {/* Bảng phân tích */}
-    <div className="mt-6 bg-white rounded shadow p-4 w-full max-w-md">
-      <h3 className="text-lg font-semibold border-b pb-2 mb-4">Phân tích <span className="float-right">Số lượng</span></h3>
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <span>Tế bào bình thường:</span>
-          <span>{cellStats.normal}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Tế bào bất thường:</span>
-          <span>{cellStats.abnormal}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Tế bào đang nảy chồi bình thường:</span>
-          <span>{cellStats.normal_2x}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Tế bào đang nảy chồi bất thường:</span>
-          <span>{cellStats.abnormal_2x}</span>
-        </div>
-      </div>
-    </div>
 
-    {/* Chú thích màu sắc */}
-    <div className="mt-4 flex flex-wrap gap-4">
-      <LegendBox color="green" label="Tế bào bình thường" />
-      <LegendBox color="red" label="Tế bào bất thường" />
-      <LegendBox color="blue" label="Tế bào nảy chồi bình thường" />
-      <LegendBox color="purple" label="Tế bào nảy chồi bất thường" />
-    </div>
-  </>
-)}
+      {cellStats && (
+        <div className="mt-6 bg-white rounded shadow p-4 w-full max-w-md">
+          <h3 className="text-lg font-semibold border-b pb-2 mb-4">
+            Phân tích <span className="float-right">Số lượng</span>
+          </h3>
+          <div className="space-y-2">
+            {image?.imageType === "methylene" ? (
+              <>
+                <div className="flex justify-between">
+                  <span>Tế bào sống:</span>
+                  <span>{cellStats.alive}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tế bào chết:</span>
+                  <span>{cellStats.dead}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span>Tế bào bình thường:</span>
+                  <span>{cellStats.normal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tế bào bất thường:</span>
+                  <span>{cellStats.abnormal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tế bào đang nảy chồi bình thường:</span>
+                  <span>{cellStats.normal_2x}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tế bào đang nảy chồi bất thường:</span>
+                  <span>{cellStats.abnormal_2x}</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {image?.imageType === "methylene" ? (
+        <div className="mt-4 flex flex-wrap gap-4">
+          <LegendBox color="green" label="Tế bào sống" />
+          <LegendBox color="gray" label="Tế bào chết" />
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap gap-4">
+          <LegendBox color="green" label="Tế bào bình thường" />
+          <LegendBox color="red" label="Tế bào bất thường" />
+          <LegendBox color="blue" label="Tế bào nảy chồi bình thường" />
+          <LegendBox color="purple" label="Tế bào nảy chồi bất thường" />
+        </div>
+      )}
     </DashbroardLayout>
   );
 };

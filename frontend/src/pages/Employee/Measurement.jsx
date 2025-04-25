@@ -28,6 +28,7 @@ const Measurement = () => {
   const [formData, setFormData] = useState({
     name: "",
     time: "",
+    imageType: "",
     images: [],
   });
 
@@ -72,7 +73,8 @@ const Measurement = () => {
         formData.name,
         experimentId,
         selectedImages.map((image) => image.file),
-        formData.time
+        formData.time,
+        formData.imageType
       );
       console.log("Measurement Data:", formData);
       if (res.status === 200) {
@@ -147,11 +149,30 @@ const Measurement = () => {
                           required
                         />
                       </div>
-
+                      {/* thêm 1 trường loại ảnh nữa, sẽ có 2 loại là ảnh bình thường và ảnh chụp xanh methylene */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Loại ảnh
+                        </label>
+                        <select
+                          id="imageType"
+                          value={formData.imageType}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        >
+                          <option value="">-- Chọn loại ảnh --</option>
+                          <option value="thường">Ảnh bình thường</option>
+                          <option value="methylene">
+                            Ảnh chụp xanh methylene
+                          </option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Tải hình ảnh lên
                         </label>
+
                         <div className="flex items-center justify-center w-full">
                           <label className="flex flex-col w-full h-32 border-4 border-dashed hover:border-gray-300 hover:bg-gray-100 cursor-pointer">
                             <div className="flex flex-col items-center justify-center pt-7">

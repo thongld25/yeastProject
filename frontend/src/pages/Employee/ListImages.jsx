@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
 import { getImagesOfMeasurement } from "../../services/ImageService";
 import ImageListTable from "../../components/ImageListTable";
+import { addImage } from "../../services/MeasurementService";
 
 const ListImages = () => {
   useUserAuth();
@@ -28,6 +29,7 @@ const ListImages = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const { measurementId } = useParams();
   const [formData, setFormData] = useState({
+    imageType: "",
     images: [],
   });
 
@@ -67,16 +69,15 @@ const ListImages = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await createMeasurement(
-        formData.name,
-        experimentId,
+      const res = await addImage(
+        measurementId,
         selectedImages.map((image) => image.file),
-        formData.time
+        formData.imageType
       );
-      console.log("Measurement Data:", formData);
+      console.log("image data:", formData);
       if (res.status === 200) {
-        toast.success("Measurement created!");
-        setFormData({ name: "", time: "", images: [] });
+        toast.success("image added!");
+        setFormData({ imageType: "", images: [] });
         setSelectedImages([]);
         setOpen(false);
         fetchImagesOfMeasurement();
@@ -112,10 +113,26 @@ const ListImages = () => {
               <DialogBackdrop className="fixed inset-0 bg-black/50" />
               <div className="fixed inset-0 flex items-center justify-center p-4">
                 <DialogPanel className="w-full max-w-2xl rounded-xl bg-white p-8 shadow-2xl">
-
                   <form onSubmit={handleSubmit}>
                     <div className="space-y-4">
-
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Loại ảnh
+                        </label>
+                        <select
+                          id="imageType"
+                          value={formData.imageType}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        >
+                          <option value="">-- Chọn loại ảnh --</option>
+                          <option value="thường">Ảnh bình thường</option>
+                          <option value="methylene">
+                            Ảnh chụp xanh methylene
+                          </option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Tải hình ảnh lên
@@ -220,7 +237,7 @@ const ListImages = () => {
                 </DialogPanel>
               </div>
             </Dialog>
-            < ImageListTable tableData={images} />
+            <ImageListTable tableData={images} />
           </div>
         </div>
       </div>

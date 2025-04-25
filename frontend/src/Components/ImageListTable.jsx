@@ -2,12 +2,27 @@ import moment from "moment/moment";
 import React from "react";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { deleteImage } from "../services/ImageService";
 
 const ImageListTable = ({ tableData }) => {
   const navigate = useNavigate();
   const handleRowClick = (imageId) => {
     navigate(`/analysis/${imageId}`);
   };
+  const handleDelete = async (imageId) => {
+      try {
+        const res = await deleteImage(imageId);
+        console.log(res);
+        if (res.status === 200) {
+            console.log("Image deleted successfully!", res);
+            toast.success("Image deleted successfully!");
+            // Optionally, you can refresh the page or update the state to reflect the deletion
+        }
+      } catch (error) {
+        toast.error("Failed to delete image");
+        console.error("Error deleting image:", error);
+      }
+    };
 
   return (
     <div className="overflow-x-auto p-0 rounded-lg mt-3">
@@ -19,6 +34,9 @@ const ImageListTable = ({ tableData }) => {
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
               Danh sách ảnh
+            </th>
+            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
+              Loại ảnh
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
                 Hành động
@@ -43,7 +61,9 @@ const ImageListTable = ({ tableData }) => {
                   style={{ width: "100px", height: "auto" }}
                 />
               </td>
-
+              <td className="py-4 px-4 my-3 mx-4 text-gray-700 text-[15px]">
+                {item.imageType}
+              </td>
               {/* Action buttons */}
               <td className="py-4 px-4">
                 <div className="">
