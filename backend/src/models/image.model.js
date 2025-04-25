@@ -11,6 +11,7 @@ const ImageSchema = new mongoose.Schema({
   maskImage: {
     type: String,
   },
+  imageType: String,
   measurementId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Measurement",

@@ -5,11 +5,11 @@ const { SuccessResponse } = require("../core/success.response");
 
 class MeasurementController {
   createMeasurement = async (req, res, next) => {
-    const { name, experimentId, time } = req.body;
+    const { name, experimentId, time, imageType } = req.body;
     const images = req.files;
     new SuccessResponse({
       message: "Create user success!",
-      metadata: await MeasurementService.createMeasurement(name, experimentId, images, time),  
+      metadata: await MeasurementService.createMeasurement(name, experimentId, images, time, imageType),  
     }).send(res);
   };
 
@@ -34,6 +34,21 @@ class MeasurementController {
     }).send(res);
   }
 
+  addImagesByMeasurementId = async (req, res, next) => {
+    const { measurementId, imageType } = req.body;
+    const images = req.files;
+    new SuccessResponse({
+      message: "Create user success!",
+      metadata: await MeasurementService.addImage(measurementId, images, imageType),  
+    }).send(res);
+  }
+
+  deleteImageById = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Delete image by id success!",
+      metadata: await MeasurementService.deleteImageById(req.params.imageId),
+    }).send(res);
+  }
 }
 
 module.exports = new MeasurementController();

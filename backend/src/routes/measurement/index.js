@@ -27,4 +27,13 @@ router.get(
   "/image/:imageId",
   asyncHandler(MeasurementController.getImageById)
 );
+router.post(
+  "/add/images",
+  upload.array("images"),
+  asyncHandler(MeasurementController.addImagesByMeasurementId)
+);
+router.delete(
+  "/image/:imageId",
+  asyncHandler(MeasurementController.deleteImageById)
+);
 module.exports = router;
