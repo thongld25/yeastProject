@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const { default: helmet } = require("helmet");
 const compression = require("compression");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.urlencoded({
     extended: true
 }))
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // init db
 require('./dbs/init.mongodb');
 
@@ -40,5 +42,6 @@ app.use((error, req, res, next) => {
         message: error.message || 'Internal Server Error'
     })
 })
+
 
 module.exports = app;

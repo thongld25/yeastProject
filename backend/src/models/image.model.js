@@ -1,5 +1,4 @@
 "use strict";
-const { area120tables } = require("googleapis/build/src/apis/area120tables");
 const mongoose = require("mongoose");
 
 const ImageSchema = new mongoose.Schema({
@@ -12,6 +11,7 @@ const ImageSchema = new mongoose.Schema({
     type: String,
   },
   imageType: String,
+  lensType: String,
   measurementId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Measurement",

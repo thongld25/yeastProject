@@ -30,6 +30,7 @@ const ListImages = () => {
   const { measurementId } = useParams();
   const [formData, setFormData] = useState({
     imageType: "",
+    lensType: "",
     images: [],
   });
 
@@ -48,6 +49,7 @@ const ListImages = () => {
 
   const handleChange = (e) => {
     setFormData({
+      ...formData,
       [e.target.id]: e.target.value,
     });
   };
@@ -72,7 +74,8 @@ const ListImages = () => {
       const res = await addImage(
         measurementId,
         selectedImages.map((image) => image.file),
-        formData.imageType
+        formData.imageType,
+        formData.lensType
       );
       console.log("image data:", formData);
       if (res.status === 200) {
@@ -130,6 +133,24 @@ const ListImages = () => {
                           <option value="thường">Ảnh bình thường</option>
                           <option value="methylene">
                             Ảnh chụp xanh methylene
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Loại lăng kính
+                        </label>
+                        <select
+                          id="lensType"
+                          value={formData.lensType}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        >
+                          <option value="">-- Chọn loại lăng kính --</option>
+                          <option value="thường">Lăng kính bình thường</option>
+                          <option value="buồng đếm">
+                            Lăng kính buồng đếm
                           </option>
                         </select>
                       </div>

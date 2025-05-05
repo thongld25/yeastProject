@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import { getImagesById } from "../../services/ImageService";
 import BacteriaImage from "../../components/BacteriaImage";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import LOAD from "../../assets/images/mau.jpeg";
 
 const AnalysisImage = () => {
   useUserAuth();
@@ -76,9 +77,14 @@ const AnalysisImage = () => {
           <h2 className="text-lg font-semibold mb-2">Ảnh gốc</h2>
           {image && (
             <img
-              src={`data:image/png;base64,${image.originalImage}`}
+              src={`http://localhost:3055${image.originalImage}`}
               alt="Original"
               className="w-full rounded shadow"
+              crossOrigin="anonymous" // Thêm thuộc tính này
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src ="/uploads/mau.jpeg"; // Placeholder image if original fails to load
+              }}
             />
           )}
         </div>
@@ -88,7 +94,7 @@ const AnalysisImage = () => {
           {image && (
             <div className="cursor-pointer" onClick={() => setModalOpen(true)}>
               <BacteriaImage
-                base64Image={image.originalImage}
+                imagePath={`http://localhost:3055${image.originalImage}`}
                 bacteriaData={image.bacteriaData}
               />
             </div>
@@ -99,9 +105,14 @@ const AnalysisImage = () => {
           <div>
             <h2 className="text-lg font-semibold mb-2">Ảnh mask</h2>
             <img
-              src={`data:image/png;base64,${image.maskImage}`}
+              src={`http://localhost:3055${image.maskImage}`}
               alt="Mask"
               className="w-full rounded shadow"
+              crossOrigin="anonymous"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src ="/uploads/mau.jpeg"; // Placeholder image if original fails to load
+              }}
             />
           </div>
         )}
@@ -120,7 +131,7 @@ const AnalysisImage = () => {
             <TransformWrapper minScale={0.5} maxScale={5} initialScale={1}>
               <TransformComponent>
                 <BacteriaImage
-                  base64Image={image.originalImage}
+                  imagePath={`http://localhost:3055${image.originalImage}`}
                   bacteriaData={image.bacteriaData}
                   onCellClick={(cell) => setSelectedCell(cell)}
                 />

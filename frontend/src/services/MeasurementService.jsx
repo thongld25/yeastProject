@@ -19,13 +19,14 @@ export async function getMeasurementByExperimentId(experimentId) {
     }
   }
 
-export async function createMeasurement(name, experimentId, images, time, imageType) {
+export async function createMeasurement(name, experimentId, images, time, imageType, lensType) {
   try {
     const userId = localStorage.getItem("userId");
     const formData = new FormData();
     formData.append("name", name);
     formData.append("experimentId", experimentId);
     formData.append("time", time);
+    formData.append("lensType", lensType);
     images.forEach((image) => {
       formData.append("images", image);
     });
@@ -46,7 +47,7 @@ export async function createMeasurement(name, experimentId, images, time, imageT
   }
 }
 
-export async function addImage(measurementId, images, imageType) {
+export async function addImage(measurementId, images, imageType, lensType) {
     try {
       const userId = localStorage.getItem("userId");
       const formData = new FormData();
@@ -55,6 +56,7 @@ export async function addImage(measurementId, images, imageType) {
         formData.append("images", image);
       });
       formData.append("imageType", imageType);
+      formData.append("lensType", lensType);
       const res = await axios.post(`${API_BASE_URL}/measurement/add/images`, formData, {
         headers: {
           "x-api-key": API_KEY,

@@ -12,7 +12,7 @@ router.use(authentication);
 
 router.post(
   "/add",
-  upload.array("images"),
+  upload.array("images", 10),
   asyncHandler(MeasurementController.createMeasurement)
 );
 router.get(
@@ -29,7 +29,7 @@ router.get(
 );
 router.post(
   "/add/images",
-  upload.array("images"),
+  upload.array("images", 10),
   asyncHandler(MeasurementController.addImagesByMeasurementId)
 );
 router.delete(
