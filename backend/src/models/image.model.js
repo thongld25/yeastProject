@@ -18,7 +18,7 @@ const ImageSchema = new mongoose.Schema({
   },
   bacteriaData: [
     {
-      cell_id: { type: String},
+      cell_id: { tye: String},
       x: Number,
       y: Number,
       width: Number,

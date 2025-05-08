@@ -56,8 +56,9 @@ const ImageListTable = ({ tableData }) => {
 
               <td className="py-4 px-4 text-gray-700 text-[15px] font-medium">
                 <img
-                  src={`data:image/png;base64,${item.originalImage}`}
+                  src={`http://localhost:3055${item.originalImage}`}
                   alt=""
+                  crossOrigin="anonymous"
                   style={{ width: "100px", height: "auto" }}
                 />
               </td>

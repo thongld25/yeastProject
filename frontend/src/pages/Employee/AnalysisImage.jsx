@@ -7,7 +7,6 @@ import { useParams } from "react-router-dom";
 import { getImagesById } from "../../services/ImageService";
 import BacteriaImage from "../../components/BacteriaImage";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import LOAD from "../../assets/images/mau.jpeg";
 
 const AnalysisImage = () => {
   useUserAuth();

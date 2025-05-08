@@ -12,41 +12,62 @@ const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
 
 class MeasurementService {
-  static drawContourToBase64(contour, padding = 5) {
-    if (!contour || contour.length === 0) return null;
+  static async drawContourToBase64(imageBuffer, bbox, contour, padding = 5) {
+    if (!imageBuffer || !bbox || !contour?.length) return null;
 
-    // Tính bounding box nhỏ nhất từ contour để crop
-    const xs = contour.map((p) => p.x);
-    const ys = contour.map((p) => p.y);
-    const minX = Math.min(...xs) - padding;
-    const maxX = Math.max(...xs) + padding;
-    const minY = Math.min(...ys) - padding;
-    const maxY = Math.max(...ys) + padding;
+    const { Image } = require('canvas');
+    try {
+        // 1. Tải ảnh từ buffer
+        const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = reject;
+            image.src = imageBuffer;
+        });
 
-    const width = maxX - minX + 1;
-    const height = maxY - minY + 1;
+        // 2. Tạo canvas cùng kích thước ảnh gốc
+        const fullCanvas = createCanvas(img.width, img.height);
+        const ctx = fullCanvas.getContext('2d');
 
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext("2d");
+        // 3. Vẽ toàn bộ ảnh gốc
+        ctx.drawImage(img, 0, 0);
 
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, width, height);
+        // 4. Vẽ contour cho từng nấm men (cell)
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(contour[0].x, contour[0].y);
+        contour.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.stroke();
 
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
+        // 5. Tính toán vùng cắt với padding
+        const { x, y, width, height } = bbox;
+        const cropX = Math.max(x - padding, 0);
+        const cropY = Math.max(y - padding, 0);
+        const cropWidth = Math.min(x + width + padding, img.width) - cropX;
+        const cropHeight = Math.min(y + height + padding, img.height) - cropY;
 
-    const [first, ...rest] = contour;
-    ctx.moveTo(first.x - minX, first.y - minY);
-    for (const point of rest) {
-      ctx.lineTo(point.x - minX, point.y - minY);
+        // 6. Tạo canvas mới cho vùng cắt
+        const croppedCanvas = createCanvas(cropWidth, cropHeight);
+        const croppedCtx = croppedCanvas.getContext('2d');
+
+        // 7. Copy vùng đã vẽ contour
+        croppedCtx.drawImage(
+            fullCanvas,
+            cropX, cropY, cropWidth, cropHeight,
+            0, 0, cropWidth, cropHeight
+        );
+
+        // 8. Trả về ảnh đã được cắt và vẽ contour
+        return croppedCanvas.toDataURL().split(',')[1];
+
+    } catch (error) {
+        console.error('Error processing image buffer:', error);
+        return null;
     }
-    ctx.closePath();
-    ctx.stroke();
+}
 
-    // Trả về chỉ phần base64 (bỏ prefix)
-    return canvas.toDataURL("image/png").split(",")[1];
-  }
 
   static async addImage(measurementId, images, imageType, lensType) {
     if (imageType == "thường" && lensType == "thường") {
@@ -82,7 +103,7 @@ class MeasurementService {
             }; // hoặc continue nếu dùng for-loop
           }
           const imageBase64 = MeasurementService.drawContourToBase64(
-            contour.contour
+            contour.contour,
           );
           // console.log(contour);
 
@@ -170,52 +191,64 @@ class MeasurementService {
     }
   }
 
-  static async createMeasurement(name, experimentId, images, time, imageType, lensType) {
+  static async createMeasurement(
+    name,
+    experimentId,
+    images,
+    time,
+    imageType,
+    lensType
+  ) {
     if (!name || !experimentId || !images) {
       throw new BadRequestError("Missing required fields");
     }
-  
+
     const session = await mongoose.startSession();
     session.startTransaction();
-  
+
     try {
       const experiment = await ExperimentService.findById(experimentId);
       if (!experiment) {
         throw new NotFoundError("Experiment not found");
       }
-  
-      const measurement = await measurementModel.create([{ 
-        name,
-        experimentId,
-        time: new Date(time)
-      }], { session });
-  
+
+      const measurement = await measurementModel.create(
+        [
+          {
+            name,
+            experimentId,
+            time: new Date(time),
+          },
+        ],
+        { session }
+      );
+
       const measurementDoc = measurement[0]; // do create([]) trả về mảng
-  
+
       const savedImages = [];
       const uploadDir = path.join(__dirname, "../uploads");
-  
+
       for (const image of images) {
         const originalFilename = `${uuidv4()}-${image.originalname}`;
         const originalPath = path.join(uploadDir, originalFilename);
         fs.writeFileSync(originalPath, image.buffer); // lưu ảnh
-  
+
         let bacteriaData = [];
         let maskPath = null;
-  
+
         if (imageType === "thường" && lensType === "thường") {
           const maskFilename = `mask-${originalFilename}`;
           maskPath = path.join(uploadDir, maskFilename);
           fs.writeFileSync(maskPath, image.buffer);
-  
+
           const bounding_boxes = cellData.bounding_boxes;
           const contoursList = cellData.contoursList;
           const contourMap = new Map();
           contoursList.forEach((item) => {
             contourMap.set(item.cell_id, item);
           });
-  
-          bacteriaData = bounding_boxes.map((bbox) => {
+
+          bacteriaData = await Promise.all(bounding_boxes.map(async (bbox) => {
             const contour = contourMap.get(bbox.cell_id);
             const cellDataObj = {
               cell_id: bbox.cell_id,
@@ -236,12 +269,21 @@ class MeasurementService {
                 minor_axis_length: contour.minor_axis_length,
                 aspect_ratio: contour.aspect_ratio,
                 max_distance: contour.max_distance,
-                image: MeasurementService.drawContourToBase64(contour.contour),
+                image: await MeasurementService.drawContourToBase64(
+                  image.buffer,
+                  {
+                    x: bbox.x,
+                    y: bbox.y,
+                    width: bbox.width,
+                    height: bbox.height,
+                  },
+                  contour.contour,
+                  5
+                ),
               });
             }
             return cellDataObj;
-          });
-  
+          }));
         } else if (imageType === "methylene" && lensType === "thường") {
           const bounding_boxes = cellData.bounding_boxes;
           bacteriaData = bounding_boxes.map((bbox) => ({
@@ -253,27 +295,33 @@ class MeasurementService {
             type: bbox.type,
           }));
         }
-  
-        const imageDoc = await imageModel.create([{
-          originalImage: `/uploads/${originalFilename}`,
-          imageType: imageType,
-          lensType: lensType,
-          maskImage: maskPath ? `/uploads/${path.basename(maskPath)}` : undefined,
-          measurementId: measurementDoc._id,
-          bacteriaData,
-        }], { session });
-  
+
+        const imageDoc = await imageModel.create(
+          [
+            {
+              originalImage: `/uploads/${originalFilename}`,
+              imageType: imageType,
+              lensType: lensType,
+              maskImage: maskPath
+                ? `/uploads/${path.basename(maskPath)}`
+                : undefined,
+              measurementId: measurementDoc._id,
+              bacteriaData,
+            },
+          ],
+          { session }
+        );
+
         savedImages.push(imageDoc[0]._id);
       }
-  
+
       measurementDoc.images = savedImages;
       await measurementDoc.save({ session });
-  
+
       await session.commitTransaction();
       session.endSession();
-  
+
       return measurementDoc;
-  
     } catch (err) {
       await session.abortTransaction();
       session.endSession();
