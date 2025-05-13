@@ -36,4 +36,10 @@ router.delete(
   "/image/:imageId",
   asyncHandler(MeasurementController.deleteImageById)
 );
+router.post(
+  "/createv2",
+  upload.array("images", 10),
+  asyncHandler(MeasurementController.createMeasurementv2)
+);
+router.get("/job-status/:jobId", asyncHandler(MeasurementController.getJobStatus));
 module.exports = router;

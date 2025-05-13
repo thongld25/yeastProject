@@ -21,6 +21,28 @@ services:
     networks:
       - final-project
 
+  redis:
+    image: redis:7.4.3
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_volume_data:/data
+    networks:
+      - final-project
+
+  redis_insight:
+    image: redislabs/redisinsight:latest
+    container_name: redis_insight
+    restart: always
+    ports:
+    - "5540:5540"
+    volumes:
+    - redis_insight_volume_data:/db
+    networks:
+      - final-project
+
   api:
     build:
       context: ./backend
@@ -32,6 +54,8 @@ services:
       - /app/node_modules
     depends_on:
       - mongo-setup
+      - redis
+      - redis_insight
     networks:
       - final-project
     ports:
@@ -56,6 +80,8 @@ services:
 
 volumes:
   mongo-data:
+  redis_volume_data:
+  redis_insight_volume_data:
 
 networks:
   final-project:

@@ -12,13 +12,18 @@ const ImageSchema = new mongoose.Schema({
   },
   imageType: String,
   lensType: String,
+  status: {
+    type: String,
+    enum: ["pending", "completed"],
+    default: "pending",
+  },
   measurementId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Measurement",
   },
   bacteriaData: [
     {
-      cell_id: { tye: String},
+      cell_id: { type: String},
       x: Number,
       y: Number,
       width: Number,
@@ -36,6 +41,9 @@ const ImageSchema = new mongoose.Schema({
       aspect_ratio: Number,
       max_distance: Number,
       image: {
+        type: String,
+      },
+      statusCell: {
         type: String,
       },
     },

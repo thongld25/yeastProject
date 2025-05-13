@@ -10,64 +10,197 @@ const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
+const imageProcessingQueue = require("../queue");
 
 class MeasurementService {
-  static async drawContourToBase64(imageBuffer, bbox, contour, padding = 5) {
-    if (!imageBuffer || !bbox || !contour?.length) return null;
-
-    const { Image } = require('canvas');
+  static async createMeasurementv2(name, experimentId, images, time, imageType, lensType) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
-        // 1. Tải ảnh từ buffer
-        const img = await new Promise((resolve, reject) => {
-            const image = new Image();
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = imageBuffer;
-        });
+        // Validate input
+        if (!name || !experimentId || !images?.length || !time || !imageType || !lensType) {
+            throw new BadRequestError("Missing required fields");
+        }
 
-        // 2. Tạo canvas cùng kích thước ảnh gốc
-        const fullCanvas = createCanvas(img.width, img.height);
-        const ctx = fullCanvas.getContext('2d');
+        // Check experiment exists
+        const experiment = await ExperimentService.findById(experimentId, { session });
+        if (!experiment) {
+            throw new NotFoundError("Experiment not found");
+        }
 
-        // 3. Vẽ toàn bộ ảnh gốc
-        ctx.drawImage(img, 0, 0);
-
-        // 4. Vẽ contour cho từng nấm men (cell)
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(contour[0].x, contour[0].y);
-        contour.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.closePath();
-        ctx.stroke();
-
-        // 5. Tính toán vùng cắt với padding
-        const { x, y, width, height } = bbox;
-        const cropX = Math.max(x - padding, 0);
-        const cropY = Math.max(y - padding, 0);
-        const cropWidth = Math.min(x + width + padding, img.width) - cropX;
-        const cropHeight = Math.min(y + height + padding, img.height) - cropY;
-
-        // 6. Tạo canvas mới cho vùng cắt
-        const croppedCanvas = createCanvas(cropWidth, cropHeight);
-        const croppedCtx = croppedCanvas.getContext('2d');
-
-        // 7. Copy vùng đã vẽ contour
-        croppedCtx.drawImage(
-            fullCanvas,
-            cropX, cropY, cropWidth, cropHeight,
-            0, 0, cropWidth, cropHeight
+        // Create measurement
+        const newMeasurement = await measurementModel.create(
+            [{
+                name,
+                experimentId,
+                time: new Date(time),
+                images: [],
+                status: 'processing'
+            }],
+            { session }
         );
 
-        // 8. Trả về ảnh đã được cắt và vẽ contour
-        return croppedCanvas.toDataURL().split(',')[1];
+        const measurementDoc = newMeasurement[0];
+        const uploadDir = path.join(__dirname, "../uploads");
+        const savedImages = [];
+
+        // Process images in parallel
+        await Promise.all(images.map(async (image) => {
+            const originalFilename = `${uuidv4()}-${image.originalname}`;
+            const originalPath = path.join(uploadDir, originalFilename);
+            
+            // Async file write
+            await fs.promises.writeFile(originalPath, image.buffer);
+
+            // Process mask image
+            let maskFilename = null;
+            if (imageType === "thường" && lensType === "thường") {
+                maskFilename = `mask-${originalFilename}`;
+                const maskPath = path.join(uploadDir, maskFilename);
+                await fs.promises.writeFile(maskPath, image.buffer);
+            }
+
+            // Create image document
+            const [imageDoc] = await imageModel.create(
+                [{
+                    originalImage: `/uploads/${originalFilename}`,
+                    imageType,
+                    lensType,
+                    maskImage: maskFilename ? `/uploads/${maskFilename}` : null,
+                    measurementId: measurementDoc._id,
+                    bacteriaData: null
+                }],
+                { session }
+            );
+
+            savedImages.push(imageDoc._id);
+        }));
+
+        // Update measurement with images
+        measurementDoc.images = savedImages;
+        await measurementDoc.save({ session });
+
+        // Commit transaction
+        await session.commitTransaction();
+
+        // Add to queue AFTER transaction
+        const job = await imageProcessingQueue.add({
+            imageIds: savedImages // Send image IDs instead of raw images
+        });
+
+        return {
+            measurement: measurementDoc,
+            job: job,
+        };
 
     } catch (error) {
-        console.error('Error processing image buffer:', error);
-        return null;
+        await session.abortTransaction();
+        throw new Error(`Measurement creation failed: ${error.message}`);
+    } finally {
+        session.endSession();
     }
 }
 
+  // Xử lý hình ảnh trong job
+  static async processImages(imageIds) {
+    try {
+      const processedImages = await Promise.all(
+        imageIds.map(async (imageId) => {
+          const image = await imageModel.findById(imageId);
+
+          if (!image) {
+            throw new NotFoundError("Image not found");
+          }
+          // thêm hàm chờ 5s rồi mới chạy
+          await new Promise((resolve) => setTimeout(resolve, 30000));
+          // 👉 Mock dữ liệu thay vì gọi axios đến server xử lý
+          const bounding_boxes = cellData.bounding_boxes;
+
+        const bacteriaData = bounding_boxes.map((bbox) => {
+          return {
+            cell_id: bbox.cell_id,
+            x: bbox.x,
+            y: bbox.y,
+            width: bbox.width,
+            height: bbox.height,
+            type: bbox.type,
+          };
+        });
+
+          image.updateOne({
+            bacteriaData: bacteriaData
+          });
+          await image.save();
+          return image;
+        })
+      );
+      return processedImages;
+    } catch (error) {
+      throw new Error("Error processing images");
+    }
+  }
+
+  static async drawContourToBase64(imageBuffer, bbox, contour, padding = 5) {
+    if (!imageBuffer || !bbox || !contour?.length) return null;
+
+    const { Image } = require("canvas");
+    try {
+      // 1. Tải ảnh từ buffer
+      const img = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = imageBuffer;
+      });
+
+      // 2. Tạo canvas cùng kích thước ảnh gốc
+      const fullCanvas = createCanvas(img.width, img.height);
+      const ctx = fullCanvas.getContext("2d");
+
+      // 3. Vẽ toàn bộ ảnh gốc
+      ctx.drawImage(img, 0, 0);
+
+      // 4. Vẽ contour cho từng nấm men (cell)
+      ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(contour[0].x, contour[0].y);
+      contour.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.stroke();
+
+      // 5. Tính toán vùng cắt với padding
+      const { x, y, width, height } = bbox;
+      const cropX = Math.max(x - padding, 0);
+      const cropY = Math.max(y - padding, 0);
+      const cropWidth = Math.min(x + width + padding, img.width) - cropX;
+      const cropHeight = Math.min(y + height + padding, img.height) - cropY;
+
+      // 6. Tạo canvas mới cho vùng cắt
+      const croppedCanvas = createCanvas(cropWidth, cropHeight);
+      const croppedCtx = croppedCanvas.getContext("2d");
+
+      // 7. Copy vùng đã vẽ contour
+      croppedCtx.drawImage(
+        fullCanvas,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        cropWidth,
+        cropHeight
+      );
+
+      // 8. Trả về ảnh đã được cắt và vẽ contour
+      return croppedCanvas.toDataURL().split(",")[1];
+    } catch (error) {
+      console.error("Error processing image buffer:", error);
+      return null;
+    }
+  }
 
   static async addImage(measurementId, images, imageType, lensType) {
     if (imageType == "thường" && lensType == "thường") {
@@ -103,7 +236,7 @@ class MeasurementService {
             }; // hoặc continue nếu dùng for-loop
           }
           const imageBase64 = MeasurementService.drawContourToBase64(
-            contour.contour,
+            contour.contour
           );
           // console.log(contour);
 
@@ -248,42 +381,44 @@ class MeasurementService {
             contourMap.set(item.cell_id, item);
           });
 
-          bacteriaData = await Promise.all(bounding_boxes.map(async (bbox) => {
-            const contour = contourMap.get(bbox.cell_id);
-            const cellDataObj = {
-              cell_id: bbox.cell_id,
-              x: bbox.x,
-              y: bbox.y,
-              width: bbox.width,
-              height: bbox.height,
-              type: bbox.type,
-            };
-            if (contour) {
-              Object.assign(cellDataObj, {
-                area: contour.area,
-                perimeter: contour.perimeter,
-                circularity: contour.circularity,
-                convexity: contour.convexity,
-                CE_diameter: contour.CE_diameter,
-                major_axis_length: contour.major_axis_length,
-                minor_axis_length: contour.minor_axis_length,
-                aspect_ratio: contour.aspect_ratio,
-                max_distance: contour.max_distance,
-                image: await MeasurementService.drawContourToBase64(
-                  image.buffer,
-                  {
-                    x: bbox.x,
-                    y: bbox.y,
-                    width: bbox.width,
-                    height: bbox.height,
-                  },
-                  contour.contour,
-                  5
-                ),
-              });
-            }
-            return cellDataObj;
-          }));
+          bacteriaData = await Promise.all(
+            bounding_boxes.map(async (bbox) => {
+              const contour = contourMap.get(bbox.cell_id);
+              const cellDataObj = {
+                cell_id: bbox.cell_id,
+                x: bbox.x,
+                y: bbox.y,
+                width: bbox.width,
+                height: bbox.height,
+                type: bbox.type,
+              };
+              if (contour) {
+                Object.assign(cellDataObj, {
+                  area: contour.area,
+                  perimeter: contour.perimeter,
+                  circularity: contour.circularity,
+                  convexity: contour.convexity,
+                  CE_diameter: contour.CE_diameter,
+                  major_axis_length: contour.major_axis_length,
+                  minor_axis_length: contour.minor_axis_length,
+                  aspect_ratio: contour.aspect_ratio,
+                  max_distance: contour.max_distance,
+                  image: await MeasurementService.drawContourToBase64(
+                    image.buffer,
+                    {
+                      x: bbox.x,
+                      y: bbox.y,
+                      width: bbox.width,
+                      height: bbox.height,
+                    },
+                    contour.contour,
+                    5
+                  ),
+                });
+              }
+              return cellDataObj;
+            })
+          );
         } else if (imageType === "methylene" && lensType === "thường") {
           const bounding_boxes = cellData.bounding_boxes;
           bacteriaData = bounding_boxes.map((bbox) => ({

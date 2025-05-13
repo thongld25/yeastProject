@@ -2,6 +2,11 @@
 
 const { NotFoundError, BadRequestError } = require("../core/error.response");
 const factoryModel = require("../models/factory.model");
+const userModel = require("../models/user.model");
+const experimentModel = require("../models/experiment.model");
+const mearurementModel = require("../models/measurement.model");
+const imageModel = require("../models/image.model");
+const mongoose = require("mongoose");
 
 class FactoryService {
   static createFactory = async ({ name, location }) => {
@@ -30,9 +35,9 @@ class FactoryService {
           name: 1,
           location: 1,
           createdAt: 1,
-          employeeCount: { $size: "$employees" } // Đếm trực tiếp mảng employees
-        }
-      }
+          employeeCount: { $size: "$employees" }, // Đếm trực tiếp mảng employees
+        },
+      },
     ]);
     if (!factories) throw new NotFoundError("Factories not found");
     return factories;
@@ -42,8 +47,78 @@ class FactoryService {
     const factory = await factoryModel.findById(id);
     if (!factory) throw new NotFoundError("Factory not found");
     return factory;
-  }
+  };
+  static updateFactory = async (id, data) => {
+    const factory = await factoryModel.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true }
+    );
+    if (!factory) throw new NotFoundError("Factory not found");
+    return factory;
+  };
 
+  static deleteFactory = async (id) => {
+    const session = await mongoose.startSession(); // Khởi tạo session
+    session.startTransaction(); // Bắt đầu transaction
+
+    try {
+      const factory = await factoryModel.findById(id).session(session);
+      if (!factory) throw new NotFoundError("Factory not found");
+      const employees = await userModel
+        .find({ factoryId: id })
+        .session(session);
+      const employeeIds = employees.map((emp) => emp._id);
+
+      // Tìm các experiment do các nhân viên tạo
+      const experiments = await experimentModel
+        .find({ userId: { $in: employeeIds } })
+        .session(session);
+      const experimentIds = experiments.map((exp) => exp._id);
+
+      // Tìm các measurement trong các experiment
+      const measurements = await mearurementModel
+        .find({
+          experimentId: { $in: experimentIds },
+        })
+        .session(session);
+      const measurementIds = measurements.map((m) => m._id);
+
+      // Xóa ảnh liên quan
+      await imageModel
+        .deleteMany({ measurementId: { $in: measurementIds } })
+        .session(session);
+
+      // Xóa measurements
+      await mearurementModel
+        .deleteMany({ experimentId: { $in: experimentIds } })
+        .session(session);
+
+      // Xóa experiments
+      await experimentModel
+        .deleteMany({ userId: { $in: employeeIds } })
+        .session(session);
+
+      // Xóa nhân viên
+      await userModel.deleteMany({ factoryId: id }).session(session);
+
+      // Xóa factory
+      const deleted = await factoryModel.findByIdAndDelete(id).session(session);
+      if (!deleted) throw new BadRequestError("Failed to delete factory");
+
+      await session.commitTransaction(); // Hoàn tất transaction
+      session.endSession();
+
+      return { message: "Factory and related data deleted successfully" };
+    } catch (error) {
+      await session.abortTransaction(); // Hoàn tác nếu có lỗi
+      session.endSession();
+      throw error; // Ném lại lỗi để controller xử lý
+    }
+    finally {
+      session.endSession(); // Đảm bảo kết thúc session
+    }
+  };
 }
 
 module.exports = FactoryService;

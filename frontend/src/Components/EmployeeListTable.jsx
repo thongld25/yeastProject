@@ -1,65 +1,71 @@
-import moment from "moment/moment";
 import React from "react";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
+import moment from "moment";
 
-const EmployeeListTable = ({ tableData }) => {
+const EmployeeListTable = ({ tableData, onEdit, onDelete }) => {
   return (
-    <div className="overflow-x-auto p-0 rounded-lg mt-3">
-      <table className="min-w-full">
-        <thead>
-          <tr className="text-left">
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Fullname
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Email
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Role
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Gender
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Birthdate
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Active
-            </th>
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full text-[15px]">
+        <thead className="bg-gray-50 text-gray-800">
+          <tr>
+            <th className="px-4 py-3 text-left font-medium">Họ tên</th>
+            <th className="px-4 py-3 text-left font-medium">Email</th>
+            <th className="px-4 py-3 text-left font-medium">Vai trò</th>
+            <th className="px-4 py-3 text-left font-medium">Giới tính</th>
+            <th className="px-4 py-3 text-left font-medium">Ngày sinh</th>
+            <th className="px-4 py-3 text-center font-medium">Hành động</th>
           </tr>
         </thead>
-        <tbody>
-          {tableData?.map((employee) => (
-            <tr key={employee._id} className="border-t border-gray-200">
-              <td className="py-4 px-4 text-gray-700 text-[15px]">
-                {employee.name}
-              </td>
-              <td className="py-4 px-4 text-gray-700 text-[15px]">
-                {employee.email}
-              </td>
-              <td className="py-4 px-4 text-gray-700 text-[15px] capitalize">
-                {employee.role?.toLowerCase()}
-              </td>
-              <td className="py-4 px-4 text-gray-700 text-[15px] capitalize">
-                {employee.gender}
-              </td>
-              <td className="py-4 px-4 text-gray-700 text-[15px]">
-                {employee.birthDate // Sửa từ birtDate -> birthDate
-                  ? moment.utc(employee.birthDate).format("Do MMM YYYY") // Thêm .utc()
-                  : "N/A"}
-              </td>
-              <td className="py-4 px-4">
-                <span
-                  className={`px-2 py-1 text-xs rounded inline-block ${
-                    employee.active
-                      ? "bg-red-100 text-red-500 border border-red-200"
-                      : "bg-green-100 text-green-500 border border-green-200"
-                  }`}
-                >
-                  {employee.active ? "Inactive" : "Active"}
-                </span>
+        <tbody className="divide-y divide-gray-100">
+          {tableData && tableData.length > 0 ? (
+            tableData.map((emp) => (
+              <tr key={emp._id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 text-gray-700">{emp.name}</td>
+                <td className="px-4 py-3 text-gray-700">{emp.email}</td>
+                <td className="px-4 py-3 text-gray-700 capitalize">
+                  {emp.role}
+                </td>
+                <td className="px-4 py-3 text-gray-700 capitalize">
+                  {emp.gender}
+                </td>
+                <td className="px-4 py-3 text-gray-700">
+                  {emp.birthDate
+                    ? moment.utc(emp.birthDate).format("DD/MM/YYYY")
+                    : "N/A"}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex justify-center items-center gap-2">
+                    <button
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => onEdit(emp)}
+                    >
+                      <FiEdit className="w-5 h-5" />
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => {
+                        const confirmDelete = window.confirm(
+                          "Bạn có chắc chắn muốn xóa nhân viên này?"
+                        );
+                        if (confirmDelete) onDelete(emp._id);
+                      }}
+                    >
+                      <FiTrash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan="7"
+                className="px-4 py-5 text-center text-gray-500 italic"
+              >
+                Không có nhân viên nào.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

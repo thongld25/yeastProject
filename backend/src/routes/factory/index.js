@@ -12,5 +12,7 @@ router.use(authentication);
 router.post("/add", asyncHandler(FactoryController.createFactory));
 router.get("/all", asyncHandler(FactoryController.getAllFactory));
 router.get("/:id", asyncHandler(FactoryController.getFactoryById));
+router.put("/update/:id", asyncHandler(FactoryController.updateFactory));
+router.delete("/delete/:id", asyncHandler(FactoryController.deleteFactory));
 
 module.exports = router;

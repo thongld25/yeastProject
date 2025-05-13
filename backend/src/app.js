@@ -22,6 +22,7 @@ app.use(express.urlencoded({
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // init db
 require('./dbs/init.mongodb');
+require('./jobs/imageProcessingJob')
 
 // init routes
 app.use("/", require('./routes'));

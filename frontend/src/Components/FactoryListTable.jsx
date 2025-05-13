@@ -1,33 +1,53 @@
-import { button } from "@material-tailwind/react";
 import moment from "moment/moment";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { deleteFactory } from "../services/FactoryService";
+import toast from "react-hot-toast";
 
 const FactoryListTable = ({ tableData }) => {
   const navigate = useNavigate();
 
-  const handleRowClick = (factoryId) => {
+  const handleDeleteClick = async (factoryId) => {  
+    const res = await deleteFactory(factoryId);
+    if (res.status === 200) {
+      console.log("Factory deleted successfully!", res);
+      toast.success("Factory deleted successfully!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      console.error("Failed to delete factory:", res);
+      toast.error("Failed to delete factory");
+    }
+  }
+
+  const handleEditClick = (factoryId) => {
     navigate(`/factories/${factoryId}`);
   };
+
   return (
     <div className="overflow-x-auto p-0 rounded-lg mt-3">
-      <table className="min-w-full">
+      <table className="min-w-full table-auto">
         <thead>
-          <tr className="text-left">
+          <tr className="text-left bg-gray-50">
             <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Factory Name
+              Tên nhà máy
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Location
+              Địa chỉ
             </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Number of Employees
+            <th className="py-3 px-4 text-gray-800 font-medium text-[15px] text-center">
+              Nhân viên
             </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Active
+            <th className="py-3 px-4 text-gray-800 font-medium text-[15px] text-center">
+              Hoạt động
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[15px] hidden md:table-cell">
-              Create At
+              Ngày tạo
+            </th>
+            <th className="py-3 px-4 text-gray-800 font-medium text-[15px] text-center">
+              Hành động
             </th>
           </tr>
         </thead>
@@ -35,29 +55,49 @@ const FactoryListTable = ({ tableData }) => {
           {tableData?.map((factory) => (
             <tr
               key={factory._id}
-              className="border-t border-gray-200"
-              onClick={() => handleRowClick(factory._id)}
+              className="border-t border-gray-200 hover:bg-gray-50"
             >
-              <td className="my-3 mx-4 text-gray-700 text-[15px] line-clamp-1 overflow-hidden">
+              <td className="py-3 px-4 text-gray-700 text-[15px] max-w-[200px]">
                 {factory.name}
               </td>
-              <td className="py-4 px-4 my-3 mx-4 text-gray-700 text-[15px]">
+              <td className="py-3 px-4 text-gray-700 text-[15px] max-w-[250px]">
                 {factory.location}
               </td>
-              <td className="py-4 px-20 my-3 mx-4 text-gray-700 text-[15px]">
+              <td className="py-3 px-4 text-center text-gray-700 text-[15px]">
                 {factory.employeeCount}
               </td>
-              <td className="py-4 px-4">
-                <span
-                  className={`px-2 py-1 text-xs rounded inline-block bg-green-100 text-green-500 border border-green-200`}
-                >
+              <td className="py-3 px-4 text-center">
+                <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-600 border border-green-300">
                   Yes
                 </span>
               </td>
-              <td className="py-4 px-4 text-gray-700 text-[15px] text-nowrap hidden md:table-cell">
+              <td className="py-3 px-4 text-gray-700 text-[15px] text-nowrap hidden md:table-cell">
                 {factory.createdAt
                   ? moment(factory.createdAt).format("Do MMM YYYY")
                   : "N/A"}
+              </td>
+              <td className="py-3 px-4 text-center">
+                <div className="flex justify-center gap-2">
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-blue-600"
+                    onClick={() => handleEditClick(factory._id)}
+                  >
+                    <FiEdit className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-red-600"
+                    onClick={() => {
+                      const confirmed = window.confirm(
+                        "Bạn có chắc chắn muốn xóa nhà máy này?"
+                      );
+                      if (confirmed) {
+                        handleDeleteClick(factory._id);
+                      }
+                    }}
+                  >
+                    <FiTrash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

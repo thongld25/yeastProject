@@ -68,22 +68,22 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <DashbroardLayout activeMenu="Factory">
+    <DashbroardLayout activeMenu="Nhà máy">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4 md:my-6">
         <div className="md:col-span-2">
           <div className="card">
             <div className="flex items-center justify-between">
-              <h5 className="text-lg">All Factory</h5>
+              <h5 className="text-lg">Tất cả nhà máy</h5>
               <button className="card-btn" onClick={handleOpen}>
                 <IoAddOutline className="text-lg" />{" "}
-                <span className="text-lg">Add Factory</span>
+                <span className="text-lg">Thêm nhà máy</span>
               </button>
               <Dialog open={open} onClose={setOpen} className="relative z-50">
                 <DialogBackdrop className="fixed inset-0 bg-black/50" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
                   <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
                     <DialogTitle className="text-xl font-bold text-gray-900 mb-6">
-                      Add New Factory
+                      Thêm nhà máy
                     </DialogTitle>
 
                     <form onSubmit={handleSubmit}>
@@ -93,7 +93,7 @@ const Dashboard = () => {
                             htmlFor="name"
                             className="block text-sm font-medium text-gray-700 mb-1"
                           >
-                            Name
+                            Tên nhà máy
                           </label>
                           <input
                             type="text"
@@ -101,7 +101,7 @@ const Dashboard = () => {
                             value={formData.name}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter factory name"
+                            placeholder="Điền tên nhà máy"
                             required
                           />
                         </div>
@@ -111,7 +111,7 @@ const Dashboard = () => {
                             htmlFor="location"
                             className="block text-sm font-medium text-gray-700 mb-1"
                           >
-                            Location
+                            Địa chỉ
                           </label>
                           <input
                             type="text"
@@ -119,7 +119,7 @@ const Dashboard = () => {
                             value={formData.location}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter factory location"
+                            placeholder="Điền địa chỉ nhà máy"
                             required
                           />
                         </div>
@@ -131,13 +131,13 @@ const Dashboard = () => {
                           onClick={() => setOpen(false)}
                           className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                         >
-                          Cancel
+                          Hủy
                         </button>
                         <button
                           type="submit"
                           className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                         >
-                          Save
+                          Tạo nhà máy
                         </button>
                       </div>
                     </form>

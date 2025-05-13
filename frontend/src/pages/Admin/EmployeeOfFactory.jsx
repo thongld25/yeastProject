@@ -9,41 +9,72 @@ import {
   DialogPanel,
   DialogTitle,
 } from "@headlessui/react";
-import toast from "react-hot-toast";
-import { ToastContainer } from "react-toastify";
+import toast, { Toaster } from "react-hot-toast";
 import { useParams } from "react-router-dom";
-import { createUser, getUserOfFactory } from "../../services/UserService";
-import { getFactoryById } from "../../services/FactoryService";
+import {
+  createUser,
+  getUserOfFactory,
+  deleteUser,
+  updateUser,
+} from "../../services/UserService";
+import { getFactoryById, updateFactory } from "../../services/FactoryService";
 import EmployeeListTable from "../../components/EmployeeListTable";
 
 const EmployeeOfFactory = () => {
   useUserAuth();
-
   const { factoryId } = useParams();
   const { user } = useContext(UserContext);
+
   const [open, setOpen] = useState(false);
   const [employees, setEmployees] = useState([]);
-  const [factory, setFactory] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [factory, setFactory] = useState({
+    name: "",
+    location: "",
+    status: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    role: "employee", // Mặc định là employee
+    role: "employee",
     birthDate: "",
-    gender: "male", // Mặc định là male
+    gender: "male",
   });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+
+  const handleOpenEdit = (user) => {
+    setEditingUser(user);
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const {email, ...updateData} = editingUser;
+      const res = await updateUser(editingUser._id, updateData); // cần tồn tại API updateUser
+      console.log(res);
+      if (res.status === 200) {
+        toast.success("Cập nhật nhân viên thành công!");
+        fetchUsers();
+        setEditOpen(false);
+      } else {
+        toast.error("Lỗi khi cập nhật");
+      }
+    } catch {
+      toast.error("Lỗi kết nối khi cập nhật");
+    }
+  };
 
   const fetchUsers = async () => {
     try {
       const res = await getUserOfFactory(factoryId);
-      console.log(res);
       if (res.status === 200) {
         setEmployees(res.metadata);
       }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to fetch users");
+    } catch {
+      toast.error("Lỗi khi tải danh sách nhân viên");
     }
   };
 
@@ -51,20 +82,17 @@ const EmployeeOfFactory = () => {
     try {
       const res = await getFactoryById(factoryId);
       if (res.status === 200) {
+        console.log(res.metadata);
         setFactory(res.metadata);
       }
-    } catch (error) {
-      console.error("Error fetching factory:", error);
-      toast.error("Failed to fetch factory");
+    } catch {
+      toast.error("Lỗi khi tải thông tin nhà máy");
     }
   };
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -79,7 +107,7 @@ const EmployeeOfFactory = () => {
         formData.gender,
         formData.birthDate
       );
-      toast.success("Employee created successfully!");
+      toast.success("Thêm nhân viên thành công!");
       setOpen(false);
       setFormData({
         fullName: "",
@@ -88,16 +116,40 @@ const EmployeeOfFactory = () => {
         birthDate: "",
         gender: "male",
       });
-      fetchUsers(); // Refresh danh sách nhân viên
-    } catch (error) {
-      console.error("Error creating employee:", error);
-      toast.error("Failed to create employee");
+      fetchUsers();
+    } catch {
+      toast.error("Thêm nhân viên thất bại");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleOpen = () => setOpen(!open);
+  const handleFactorySave = async () => {
+    try {
+      const res = await updateFactory(factoryId, factory);
+      if (res.status === 200) {
+        toast.success("Cập nhật nhà máy thành công");
+      } else {
+        toast.error("Lỗi khi cập nhật nhà máy");
+      }
+    } catch {
+      toast.error("Lỗi kết nối máy chủ");
+    }
+  };
+
+  const handleDeleteEmployee = async (id) => {
+    try {
+      const res = await deleteUser(id);
+      if (res.status === 200) {
+        toast.success("Đã xoá nhân viên");
+        fetchUsers();
+      } else {
+        toast.error("Xoá thất bại");
+      }
+    } catch {
+      toast.error("Lỗi xoá nhân viên");
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -105,86 +157,301 @@ const EmployeeOfFactory = () => {
   }, [factoryId]);
 
   return (
-    <DashbroardLayout activeMenu="Factory">
-      <ToastContainer />
+    <DashbroardLayout activeMenu="Nhà máy">
+      <Toaster />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4 md:my-6">
         <div className="md:col-span-2">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <h5 className="text-lg">All Employee of {factory.name}</h5>
+          <div className="card space-y-6">
+            {/* Thông tin nhà máy */}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Thông tin nhà máy</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Tên nhà máy */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tên nhà máy
+                  </label>
+                  <input
+                    type="text"
+                    value={factory.name || ""}
+                    onChange={(e) =>
+                      setFactory({ ...factory, name: e.target.value })
+                    }
+                    placeholder="Nhập tên nhà máy"
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+
+                {/* Địa chỉ nhà máy */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Địa chỉ nhà máy
+                  </label>
+                  <input
+                    type="text"
+                    value={factory.location || ""}
+                    onChange={(e) =>
+                      setFactory({ ...factory, location: e.target.value })
+                    }
+                    placeholder="Nhập địa chỉ"
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+              </div>
+
+              {/* Trạng thái hoạt động */}
+              <div className="mt-4 flex items-center gap-4">
+                <label className="text-sm font-medium">Đang hoạt động:</label>
+                <input
+                  type="checkbox"
+                  checked={factory.status === "active"}
+                  onChange={(e) =>
+                    setFactory({
+                      ...factory,
+                      status: e.target.checked ? "active" : "inactive",
+                    })
+                  }
+                />
+              </div>
+
               <button
-                className="card-btn flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                onClick={handleOpen}
+                onClick={handleFactorySave}
+                className="mt-4 bg-green-600 text-white px-4 py-2 rounded"
+              >
+                Cập nhật thông tin nhà máy
+              </button>
+            </div>
+
+            {/* Nút thêm nhân viên */}
+            <div className="flex justify-between items-center">
+              <h5 className="text-lg font-semibold">Danh sách nhân viên</h5>
+              <button
+                onClick={() => setOpen(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
               >
                 <IoAddOutline className="text-lg" />
-                <span className="text-lg">Add Employee</span>
+                Thêm nhân viên
               </button>
+            </div>
 
-              {/* Dialog thêm nhân viên */}
-              <Dialog
-                open={open}
-                onClose={() => setOpen(false)}
-                className="relative z-50"
-              >
-                <DialogBackdrop className="fixed inset-0 bg-black/50" />
-                <div className="fixed inset-0 flex items-center justify-center p-4">
-                  <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
-                    <DialogTitle className="text-xl font-bold text-gray-900 mb-6">
-                      Add New Employee
-                    </DialogTitle>
+            {/* Bảng nhân viên */}
+            <EmployeeListTable
+              tableData={employees}
+              onEdit={handleOpenEdit}
+              onDelete={handleDeleteEmployee}
+            />
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Full Name */}
+            {/* Dialog thêm nhân viên */}
+            <Dialog
+              open={open}
+              onClose={() => setOpen(false)}
+              className="relative z-50"
+            >
+              <DialogBackdrop className="fixed inset-0 bg-black/50" />
+              <div className="fixed inset-0 flex items-center justify-center p-4">
+                <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
+                  <DialogTitle className="text-xl font-bold mb-6">
+                    Thêm nhân viên mới
+                  </DialogTitle>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Họ tên */}
+                    <div>
+                      <label
+                        htmlFor="fullName"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Họ tên
+                      </label>
+                      <input
+                        type="text"
+                        id="fullName"
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        placeholder="Nhập họ tên"
+                        required
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="Nhập email"
+                        required
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+
+                    {/* Vai trò */}
+                    <div>
+                      <label
+                        htmlFor="role"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Vai trò
+                      </label>
+                      <select
+                        id="role"
+                        value={formData.role}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border rounded"
+                        required
+                      >
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                      </select>
+                    </div>
+
+                    {/* Ngày sinh */}
+                    <div>
+                      <label
+                        htmlFor="birthDate"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Ngày sinh
+                      </label>
+                      <input
+                        type="date"
+                        id="birthDate"
+                        value={formData.birthDate}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border rounded"
+                        required
+                      />
+                    </div>
+
+                    {/* Giới tính */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Giới tính
+                      </label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="male"
+                            checked={formData.gender === "male"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                gender: e.target.value,
+                              }))
+                            }
+                          />
+                          <span className="ml-2">Nam</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="female"
+                            checked={formData.gender === "female"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                gender: e.target.value,
+                              }))
+                            }
+                          />
+                          <span className="ml-2">Nữ</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Nút hành động */}
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        className="px-4 py-2 border rounded"
+                      >
+                        Huỷ
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className={`px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700 ${
+                          isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        {isSubmitting ? "Đang tạo..." : "Tạo nhân viên"}
+                      </button>
+                    </div>
+                  </form>
+                </DialogPanel>
+              </div>
+            </Dialog>
+            {/* Dialog chỉnh sửa nhân viên */}
+            <Dialog
+              open={editOpen}
+              onClose={() => setEditOpen(false)}
+              className="relative z-50"
+            >
+              <DialogBackdrop className="fixed inset-0 bg-black/50" />
+              <div className="fixed inset-0 flex items-center justify-center p-4">
+                <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
+                  <DialogTitle className="text-xl font-bold mb-6">
+                    Chỉnh sửa nhân viên
+                  </DialogTitle>
+                  {editingUser && (
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                      {/* Họ tên */}
                       <div>
-                        <label
-                          htmlFor="fullName"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Full Name
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Họ tên
                         </label>
                         <input
                           type="text"
-                          id="fullName"
-                          value={formData.fullName}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter full name"
+                          value={editingUser.name || ""}
+                          onChange={(e) =>
+                            setEditingUser({
+                              ...editingUser,
+                              name: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
                           required
                         />
                       </div>
 
                       {/* Email */}
                       <div>
-                        <label
-                          htmlFor="email"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Email
                         </label>
                         <input
                           type="email"
-                          id="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter email"
-                          required
+                          value={editingUser.email || ""}
+                          disabled
+                          className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-500 cursor-not-allowed"
                         />
                       </div>
 
-                      {/* Role */}
+                      {/* Vai trò */}
                       <div>
-                        <label
-                          htmlFor="role"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Role
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Vai trò
                         </label>
                         <select
-                          id="role"
-                          value={formData.role}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={editingUser.role || "employee"}
+                          onChange={(e) =>
+                            setEditingUser({
+                              ...editingUser,
+                              role: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
                           required
                         >
                           <option value="employee">Employee</option>
@@ -192,116 +459,89 @@ const EmployeeOfFactory = () => {
                         </select>
                       </div>
 
-                      {/* Birth Date */}
+                      {/* Ngày sinh */}
                       <div>
-                        <label
-                          htmlFor="birthDate"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Birth Date
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Ngày sinh
                         </label>
                         <input
                           type="date"
-                          id="birthDate"
-                          value={formData.birthDate}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={
+                            editingUser.birthDate
+                              ? editingUser.birthDate.slice(0, 10)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setEditingUser({
+                              ...editingUser,
+                              birthDate: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
                           required
                         />
                       </div>
 
+                      {/* Giới tính */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Gender
+                          Giới tính
                         </label>
-                        <div className="flex space-x-4">
-                          <label className="inline-flex items-center">
+                        <div className="flex gap-4">
+                          <label className="flex items-center">
                             <input
                               type="radio"
-                              name="gender"
+                              name="edit-gender"
                               value="male"
-                              checked={formData.gender === "male"}
+                              checked={editingUser.gender === "male"}
                               onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
+                                setEditingUser({
+                                  ...editingUser,
                                   gender: e.target.value,
-                                }))
+                                })
                               }
-                              className="text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="ml-2">Male</span>
+                            <span className="ml-2">Nam</span>
                           </label>
-                          <label className="inline-flex items-center">
+                          <label className="flex items-center">
                             <input
                               type="radio"
-                              name="gender"
+                              name="edit-gender"
                               value="female"
-                              checked={formData.gender === "female"}
+                              checked={editingUser.gender === "female"}
                               onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
+                                setEditingUser({
+                                  ...editingUser,
                                   gender: e.target.value,
-                                }))
+                                })
                               }
-                              className="text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="ml-2">Female</span>
+                            <span className="ml-2">Nữ</span>
                           </label>
                         </div>
                       </div>
 
-                      <div className="flex justify-end space-x-3 pt-4">
+                      {/* Nút hành động */}
+                      <div className="flex justify-end gap-3 pt-4">
                         <button
                           type="button"
-                          onClick={() => setOpen(false)}
-                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setEditOpen(false)}
+                          className="px-4 py-2 border rounded"
                         >
-                          Cancel
+                          Huỷ
                         </button>
                         <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className={`rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 relative ${
-                          isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                      >
-                        {isSubmitting ? (
-                          <div className="flex items-center justify-center">
-                            <svg
-                              className="animate-spin h-5 w-5 mr-2 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            Creating...
-                          </div>
-                        ) : (
-                          "Create Employee"
-                        )}
-                      </button>
+                          type="submit"
+                          className="px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                          Cập nhật
+                        </button>
                       </div>
                     </form>
-                  </DialogPanel>
-                </div>
-              </Dialog>
-            </div>
-
-            {/* Danh sách nhân viên sẽ được thêm vào đây */}
-            <EmployeeListTable tableData={employees} />
+                  )}
+                </DialogPanel>
+              </div>
+            </Dialog>
           </div>
         </div>
       </div>

@@ -24,6 +24,20 @@ class UserController {
       metadata: await UserService.findById(req.params.userId),
     }).send(res);
   };
+
+  deleteUserById = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Delete user by id success!",
+      metadata: await UserService.deleteUser(req.params.userId),
+    }).send(res);
+  }
+
+  updateUser = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Update user by id success!",
+      metadata: await UserService.updateUser(req.params.userId, req.body),
+    }).send(res);
+  }
 }
 
 module.exports = new UserController();

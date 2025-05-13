@@ -2,6 +2,7 @@
 
 const MeasurementService = require("../services/measurement.service");
 const { SuccessResponse } = require("../core/success.response");
+const imageProcessingQueue = require('../queue');
 
 class MeasurementController {
   createMeasurement = async (req, res, next) => {
@@ -49,6 +50,44 @@ class MeasurementController {
       metadata: await MeasurementService.deleteImageById(req.params.imageId),
     }).send(res);
   }
+  createMeasurementv2 = async (req, res, next) => {
+    const { name, experimentId, time, imageType, lensType } = req.body;
+    const images = req.files;
+    new SuccessResponse({
+      message: "Create user success!",
+      metadata: await MeasurementService.createMeasurementv2(name, experimentId, images, time, imageType, lensType),  
+    }).send(res);
+  };
+  getJobStatus = async (req, res) => {
+    try {
+      const jobId = req.params.jobId;
+      if (!jobId) {
+      return res.status(400).json({ message: 'Job ID is required' });
+      }
+
+      const job = await imageProcessingQueue.getJob(jobId);
+      if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+      }
+
+      const status = await job.getState();
+      const progress = await job.progress();
+      const result = {
+      status,
+      progress,
+      returnValue: job.returnvalue,
+      failedReason: job.failedReason
+      };
+
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({ 
+      message: 'Error fetching job status',
+      error: error.message
+      });
+    }
+  };
+  
 }
 
 module.exports = new MeasurementController();

@@ -25,6 +25,20 @@ class FactoryController {
     }).send(res);
   };
 
+  updateFactory = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Update factory success!",
+      metadata: await FactoryService.updateFactory(req.params.id, req.body),
+    }).send(res);
+  };
+
+  deleteFactory = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Delete factory success!",
+      metadata: await FactoryService.deleteFactory(req.params.id),
+    }).send(res);
+  };
+
 }
 
 module.exports = new FactoryController();
