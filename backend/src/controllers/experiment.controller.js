@@ -28,6 +28,20 @@ class ExperimentController {
             metadata: await ExperimentService.findOfFactory(userId),
         }).send(res);
     }
+    deleteExperiment = async (req, res, next) => {
+        new SuccessResponse({
+            message: "Delete experiment success!",
+            metadata: await ExperimentService.deleteExperiment(req.params.experimentId),
+        }).send(res);
+    }
+    updateExperiment = async (req, res, next) => {
+        const {experimentId} = req.params;
+        const {title, description, time} = req.body;
+        new SuccessResponse({
+            message: "Update experiment success!",
+            metadata: await ExperimentService.updateExperiment(experimentId, {title, description, time}),
+        }).send(res);
+    }
 }
 
 module.exports = new ExperimentController();

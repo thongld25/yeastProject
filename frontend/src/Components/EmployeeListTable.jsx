@@ -5,14 +5,14 @@ import moment from "moment";
 const EmployeeListTable = ({ tableData, onEdit, onDelete }) => {
   return (
     <div className="overflow-x-auto mt-4">
-      <table className="min-w-full text-[15px]">
+      <table className="min-w-full text-[15px] text-left">
         <thead className="bg-gray-50 text-gray-800">
           <tr>
-            <th className="px-4 py-3 text-left font-medium">Họ tên</th>
-            <th className="px-4 py-3 text-left font-medium">Email</th>
-            <th className="px-4 py-3 text-left font-medium">Vai trò</th>
-            <th className="px-4 py-3 text-left font-medium">Giới tính</th>
-            <th className="px-4 py-3 text-left font-medium">Ngày sinh</th>
+            <th className="px-4 py-3 font-medium">Họ tên</th>
+            <th className="px-4 py-3 font-medium">Email</th>
+            <th className="px-4 py-3 font-medium">Vai trò</th>
+            <th className="px-4 py-3 font-medium">Giới tính</th>
+            <th className="px-4 py-3 font-medium">Ngày sinh</th>
             <th className="px-4 py-3 text-center font-medium">Hành động</th>
           </tr>
         </thead>
@@ -59,7 +59,7 @@ const EmployeeListTable = ({ tableData, onEdit, onDelete }) => {
           ) : (
             <tr>
               <td
-                colSpan="7"
+                colSpan="6"
                 className="px-4 py-5 text-center text-gray-500 italic"
               >
                 Không có nhân viên nào.

@@ -10,7 +10,11 @@ import {
 import { UserContext } from "../../context/userContext";
 import { useUserAuth } from "../../hooks/useUserAuth";
 import ExperimentListTable from "../../components/ExperimentListTable";
-import { createExperiment, getExperimentsOfEmployee } from "../../services/ExperimentService";
+import {
+  createExperiment,
+  deleteExperiment,
+  getExperimentsOfEmployee,
+} from "../../services/ExperimentService";
 import toast from "react-hot-toast";
 
 const Experiment = () => {
@@ -44,7 +48,24 @@ const Experiment = () => {
       console.error("Error fetching experiments:", error);
       toast.error("Failed to fetch experiments");
     }
-  }
+  };
+
+  const handleDeleteExperiment = async (experimentId) => {
+    try {
+      const res = await deleteExperiment(experimentId);
+      if (res.status === 200) {
+        console.log("Experiment deleted successfully!", res);
+        toast.success("Xóa thí nghiệm thành công!");
+        fetchExperiments(); // Fetch updated experiments
+      } else {
+        toast.error("Xóa thí nghiệm không thành công!");
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Lỗi khi xóa thí nghiệm"
+      );
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,7 +79,7 @@ const Experiment = () => {
       if (res.status === 200) {
         console.log("Experiment created successfully!", res);
         setFormData({ title: "", description: "", time: "" }); // Reset form
-        toast.success("Experiment created successfully!");
+        toast.success("Tạo thí nghiệm thành công!");
         fetchExperiments(); // Fetch updated experiments
       }
       console.log("Experiment Data:", formData);
@@ -66,7 +87,7 @@ const Experiment = () => {
     } catch (error) {
       console.error("Error:", error);
       toast.error(
-        error.response?.data?.message || "Failed to create experiment"
+        error.response?.data?.message || "Lỗi khi tạo thí nghiệm"
       );
     } finally {
       setIsSubmitting(false);
@@ -209,7 +230,7 @@ const Experiment = () => {
               </div>
             </Dialog>
 
-            <ExperimentListTable tableData={experiments} />
+            <ExperimentListTable tableData={experiments} onDelete={handleDeleteExperiment} />
           </div>
         </div>
       </div>

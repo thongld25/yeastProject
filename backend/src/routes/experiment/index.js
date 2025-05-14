@@ -19,5 +19,13 @@ router.get(
   "/factory",
   asyncHandler(experimentController.getExperimentOfFactory)
 );
+router.delete(
+  "/delete/:experimentId",
+  asyncHandler(experimentController.deleteExperiment)
+);
+router.put(
+  "/update/:experimentId",
+  asyncHandler(experimentController.updateExperiment)
+);
 
 module.exports = router;

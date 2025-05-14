@@ -24,22 +24,39 @@ export async function createExperiment(title, description, time) {
 }
 
 export async function getExperimentsOfEmployee() {
-    try {
-      const userId = localStorage.getItem("userId");
-      const res = await axios.get(
-        `${API_BASE_URL}/experiment/employee`,
-        {
-          headers: {
-            "x-api-key": API_KEY,
-            "x-client-id": userId,
-            authorization: localStorage.getItem("accessToken"),
-            refreshtoken: localStorage.getItem("refreshToken"),
-          },
-        }
-      );
-      return res.data;
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      throw error.response.data.message || "Failed to fetch user profile";
-    }
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/experiment/employee`, {
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error.response.data.message || "Failed to fetch user profile";
   }
+}
+
+export async function deleteExperiment(experimentId) {
+  try {
+    const res = await axios.delete(
+      `${API_BASE_URL}/experiment/delete/${experimentId}`,
+      {
+        headers: {
+          "x-api-key": API_KEY,
+          "x-client-id": localStorage.getItem("userId"),
+          authorization: localStorage.getItem("accessToken"),
+          refreshtoken: localStorage.getItem("refreshToken"),
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error.response.data.message || "Failed to fetch user profile";
+  }
+}
