@@ -73,10 +73,13 @@ const Dashboard = () => {
         <div className="md:col-span-2">
           <div className="card">
             <div className="flex items-center justify-between">
-              <h5 className="text-lg">Tất cả nhà máy</h5>
-              <button className="card-btn" onClick={handleOpen}>
-                <IoAddOutline className="text-lg" />{" "}
-                <span className="text-lg">Thêm nhà máy</span>
+              <h5 className="text-lg font-semibold">Tất cả nhà máy</h5>
+              <button
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                onClick={handleOpen}
+              >
+                <IoAddOutline className="text-lg" />
+                Thêm nhà máy
               </button>
               <Dialog open={open} onClose={setOpen} className="relative z-50">
                 <DialogBackdrop className="fixed inset-0 bg-black/50" />
@@ -145,7 +148,7 @@ const Dashboard = () => {
                 </div>
               </Dialog>
             </div>
-            <FactoryListTable tableData={factories || []}/>
+            <FactoryListTable tableData={factories || []} />
           </div>
         </div>
       </div>

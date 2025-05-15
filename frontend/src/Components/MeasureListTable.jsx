@@ -1,73 +1,79 @@
-import moment from "moment/moment";
+import moment from "moment";
 import React from "react";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
-const MeasurementListTable = ({ tableData }) => {
+const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
   const navigate = useNavigate();
-  const handleRowClick = (measurementId) => {
+
+  const handleRowClick = (e, measurementId) => {
+    // Không xử lý nếu click vào icon edit/delete
+    if (
+      e.target.closest("button") ||
+      e.target.closest("svg") ||
+      e.target.closest("path")
+    ) {
+      return;
+    }
     navigate(`/images/${measurementId}`);
-  }
+  };
 
   return (
-    <div className="overflow-x-auto p-0 rounded-lg mt-3">
-      <table className="min-w-full">
-        <thead>
-          <tr className="text-left">
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              STT
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Tên lần đo
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Ngày tạo
-            </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[15px]">
-              Hành động
-            </th>
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full text-[15px] text-left">
+        <thead className="bg-gray-50 text-gray-800">
+          <tr>
+            <th className="px-4 py-3 font-semibold">STT</th>
+            <th className="px-4 py-3 font-semibold">Tên lần đo</th>
+            <th className="px-4 py-3 font-semibold">Thời điểm</th>
+            <th className="px-4 py-3 font-semibold text-center">Hành động</th>
           </tr>
         </thead>
-        <tbody>
-          {tableData?.map((item, index) => (
-            <tr key={item._id} className="border-t border-gray-200" onClick={() => handleRowClick(item._id)}>
-              {/* Số thứ tự */}
-              <td className="py-4 px-4 text-gray-700 text-[15px] ">
-                {index + 1}
-              </td>
-
-              {/* Tên */}
-              <td className="py-4 px-4 text-gray-700 text-[15px] font-medium">
-                {item.name || "N/A"}
-              </td>
-
-              {/* Ngày tạo */}
-              <td className="py-4 px-4 text-gray-700 text-[15px] capitalize">
-                {item.time
-                  ? moment(item.time).format("HH:mm - Do MMM YYYY")
-                  : "N/A"}
-              </td>
-
-              {/* Action buttons */}
-              <td className="py-4 px-4">
-                <div className="">
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-blue-600"
-                    onClick={() => handleEdit(item._id)}
-                  >
-                    <FiEdit className="w-5 h-5" />
-                  </button>
-                  
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-red-600"
-                    onClick={() => handleDelete(item._id)}
-                  >
-                    <FiTrash2 className="w-5 h-5" />
-                  </button>
-                </div>
+        <tbody className="divide-y divide-gray-100">
+          {tableData?.length > 0 ? (
+            tableData.map((item, index) => (
+              <tr
+                key={item._id}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={(e) => handleRowClick(e, item._id)}
+              >
+                <td className="px-4 py-3 text-gray-700">{index + 1}</td>
+                <td className="px-4 py-3 text-gray-800 font-medium">
+                  {item.name || "Không có tên"}
+                </td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                  {item.time
+                    ? moment(item.time).format("HH:mm - DD/MM/YYYY")
+                    : "N/A"}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex justify-center gap-2">
+                    <button
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => onEdit?.(item)}
+                    >
+                      <FiEdit className="w-5 h-5" />
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => onDelete?.(item._id)}
+                    >
+                      <FiTrash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan="4"
+                className="px-4 py-6 text-center text-gray-500 italic"
+              >
+                Chưa có lần đo nào.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

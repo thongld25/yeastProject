@@ -79,13 +79,13 @@ const FactoryListTable = ({ tableData }) => {
               <td className="py-3 px-4 text-center">
                 <div className="flex justify-center gap-2">
                   <button
-                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-blue-600"
+                    className="text-blue-600 hover:text-blue-800"
                     onClick={() => handleEditClick(factory._id)}
                   >
                     <FiEdit className="w-5 h-5" />
                   </button>
                   <button
-                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-red-600"
+                    className="text-red-600 hover:text-red-800"
                     onClick={() => {
                       const confirmed = window.confirm(
                         "Bạn có chắc chắn muốn xóa nhà máy này?"

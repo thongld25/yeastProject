@@ -13,9 +13,12 @@ import MeasurementListTable from "../../components/MeasureListTable";
 import toast from "react-hot-toast";
 import {
   createMeasurement,
+  deleteMeasurement,
   getMeasurementByExperimentId,
+  updateMeasurement,
 } from "../../services/MeasurementService";
 import { useParams } from "react-router-dom";
+import { getExperimentById } from "../../services/ExperimentService";
 
 const Measurement = () => {
   useUserAuth();
@@ -32,6 +35,46 @@ const Measurement = () => {
     lensType: "",
     images: [],
   });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingMeasurement, setEditingMeasurement] = useState(null);
+  const [experimentTitle, setExperimentTitle] = useState("");
+
+  const handleOpenEdit = (item) => {
+    setEditingMeasurement(item);
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const editData = {
+        name: editingMeasurement.name,
+        time: editingMeasurement.time,
+      };
+      const res = await updateMeasurement(editingMeasurement._id, editData);
+      if (res.status === 200) {
+        toast.success("Cập nhật lần đo thành công!");
+        fetchMeasurements();
+        setEditOpen(false);
+      } else {
+        toast.error("Cập nhật thất bại!");
+      }
+    } catch (error) {
+      console.error("Error updating measurement:", error);
+      toast.error("Lỗi kết nối khi cập nhật!");
+    }
+  };
+
+  const fetchExperiment = async () => {
+    try {
+      const res = await getExperimentById(experimentId);
+      if (res.status === 200) {
+        setExperimentTitle(res.metadata.title);
+      }
+    } catch {
+      toast.error("Không lấy được thông tin thí nghiệm");
+    }
+  };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -61,7 +104,24 @@ const Measurement = () => {
         setMeasurements(res.metadata);
       }
     } catch (error) {
-      toast.error("Failed to fetch measurements");
+      toast.error("Lấy dữ liệu lần đo thất bại");
+    }
+  };
+
+  const handleDeleteMeasurement = async (measurementId) => {
+    const confirmDelete = window.confirm(
+      "Bạn có chắc chắn muốn xóa lần đo này?"
+    );
+    if (confirmDelete) {
+      try {
+        const res = await deleteMeasurement(measurementId);
+        if (res.status === 200) {
+          toast.success("Xóa lần đo thành công!");
+          fetchMeasurements();
+        }
+      } catch (error) {
+        toast.error("Xóa lần đo thất bại");
+      }
     }
   };
 
@@ -80,7 +140,7 @@ const Measurement = () => {
       );
       console.log("Measurement Data:", formData);
       if (res.status === 200) {
-        toast.success("Measurement created!");
+        toast.success("Tạo lần đo thành công!");
         setFormData({ name: "", time: "", images: [] });
         setSelectedImages([]);
         setOpen(false);
@@ -95,6 +155,7 @@ const Measurement = () => {
 
   useEffect(() => {
     fetchMeasurements();
+    fetchExperiment();
   }, []);
 
   return (
@@ -103,10 +164,18 @@ const Measurement = () => {
         <div className="md:col-span-2">
           <div className="card">
             <div className="flex items-center justify-between">
-              <h5 className="text-lg">Các lần đo</h5>
-              <button className="card-btn" onClick={() => setOpen(true)}>
+              <h5 className="text-lg font-medium flex items-center gap-2 text-gray-700">
+                <span>{experimentTitle}</span>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-700 font-medium">Các lần đo</span>
+              </h5>
+
+              <button
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                onClick={() => setOpen(true)}
+              >
                 <IoAddOutline className="text-lg" />
-                <span className="text-lg">Thêm lần đo</span>
+                Thêm lần đo
               </button>
             </div>
 
@@ -183,9 +252,7 @@ const Measurement = () => {
                         >
                           <option value="">-- Chọn loại lăng kính --</option>
                           <option value="thường">Lăng kính thường</option>
-                          <option value="buồng đếm">
-                            Lăng kính buồng đếm
-                          </option>
+                          <option value="buồng đếm">Lăng kính buồng đếm</option>
                         </select>
                       </div>
                       <div>
@@ -294,7 +361,81 @@ const Measurement = () => {
               </div>
             </Dialog>
 
-            <MeasurementListTable tableData={measurements} />
+            <Dialog
+              open={editOpen}
+              onClose={() => setEditOpen(false)}
+              className="relative z-50"
+            >
+              <DialogBackdrop className="fixed inset-0 bg-black/50" />
+              <div className="fixed inset-0 flex items-center justify-center p-4">
+                <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
+                  <DialogTitle className="text-xl font-bold mb-6">
+                    Chỉnh sửa lần đo
+                  </DialogTitle>
+                  {editingMeasurement && (
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tên lần đo
+                        </label>
+                        <input
+                          type="text"
+                          value={editingMeasurement.name || ""}
+                          onChange={(e) =>
+                            setEditingMeasurement({
+                              ...editingMeasurement,
+                              name: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Thời điểm
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={editingMeasurement.time?.slice(0, 16) || ""}
+                          onChange={(e) =>
+                            setEditingMeasurement({
+                              ...editingMeasurement,
+                              time: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-3 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setEditOpen(false)}
+                          className="px-4 py-2 border rounded"
+                        >
+                          Huỷ
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                          Cập nhật
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </DialogPanel>
+              </div>
+            </Dialog>
+
+            <MeasurementListTable
+              tableData={measurements}
+              onDelete={handleDeleteMeasurement}
+              onEdit={handleOpenEdit}
+            />
           </div>
         </div>
       </div>

@@ -42,6 +42,13 @@ class ExperimentController {
             metadata: await ExperimentService.updateExperiment(experimentId, {title, description, time}),
         }).send(res);
     }
+    getExperimentById = async (req, res, next) => {
+        const {experimentId} = req.params;
+        new SuccessResponse({
+            message: "Get experiment by id success!",
+            metadata: await ExperimentService.findById(experimentId),
+        }).send(res);
+    }
 }
 
 module.exports = new ExperimentController();

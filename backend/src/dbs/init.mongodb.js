@@ -5,7 +5,7 @@ const Grid = require("gridfs-stream");
 require("dotenv").config();
 
 const connectString = process.env.ATLAS_URI;
-const connectStringLocal = `mongodb://localhost:27017/test?replicaSet=rs0`;
+const connectStringLocal = `mongodb://mongo:27017/test?replicaSet=rs0`;
 
 class Database {
   constructor() {

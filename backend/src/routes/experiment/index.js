@@ -27,5 +27,9 @@ router.put(
   "/update/:experimentId",
   asyncHandler(experimentController.updateExperiment)
 );
+router.get(
+  "/:experimentId",
+  asyncHandler(experimentController.getExperimentById)
+);
 
 module.exports = router;

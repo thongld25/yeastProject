@@ -3,12 +3,21 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 
-const ExperimentListTable = ({ tableData, onDelete }) => {
+const ExperimentListTable = ({ tableData, onDelete, onEdit }) => {
   const navigate = useNavigate();
 
-  const handleCLickEdit = (experimentId) => {
+  const handleRowClick = (e, experimentId) => {
+    // Không xử lý nếu click vào icon edit/delete
+    if (
+      e.target.closest("button") ||
+      e.target.closest("svg") ||
+      e.target.closest("path")
+    ) {
+      return;
+    }
     navigate(`/experiment/${experimentId}`);
-  }
+  };
+
   return (
     <div className="overflow-x-auto mt-4">
       <table className="min-w-full text-[15px] text-left">
@@ -23,10 +32,12 @@ const ExperimentListTable = ({ tableData, onDelete }) => {
         <tbody className="divide-y divide-gray-100">
           {tableData?.length > 0 ? (
             tableData.map((experiment) => (
-              <tr key={experiment._id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-gray-800">
-                  {experiment.title}
-                </td>
+              <tr
+                key={experiment._id}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={(e) => handleRowClick(e, experiment._id)}
+              >
+                <td className="px-4 py-3 text-gray-800">{experiment.title}</td>
                 <td className="px-4 py-3 text-gray-800">
                   {experiment.description}
                 </td>
@@ -37,7 +48,7 @@ const ExperimentListTable = ({ tableData, onDelete }) => {
                   <div className="flex justify-center items-center gap-2">
                     <button
                       className="text-blue-600 hover:text-blue-800"
-                      onClick={() => handleCLickEdit(experiment._id)}
+                      onClick={() => onEdit(experiment)} // ✅ sửa tại đây
                     >
                       <FiEdit className="w-5 h-5" />
                     </button>
@@ -45,7 +56,7 @@ const ExperimentListTable = ({ tableData, onDelete }) => {
                       className="text-red-600 hover:text-red-800"
                       onClick={() => {
                         const confirmDelete = window.confirm(
-                          "Bạn có chắc chắn muốn xóa nhân viên này?"
+                          "Bạn có chắc chắn muốn xóa thí nghiệm này?"
                         );
                         if (confirmDelete) onDelete(experiment._id);
                       }}
@@ -59,7 +70,7 @@ const ExperimentListTable = ({ tableData, onDelete }) => {
           ) : (
             <tr>
               <td
-                colSpan="3"
+                colSpan="4"
                 className="px-4 py-6 text-center text-gray-500 italic"
               >
                 Không có thí nghiệm nào.

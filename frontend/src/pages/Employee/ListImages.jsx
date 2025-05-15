@@ -1,4 +1,4 @@
-import React, { use, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import DashbroardLayout from "../../components/layouts/DashbroardLayout";
 import { IoAddOutline } from "react-icons/io5";
 import {
@@ -18,7 +18,10 @@ import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
 import { getImagesOfMeasurement } from "../../services/ImageService";
 import ImageListTable from "../../components/ImageListTable";
-import { addImage } from "../../services/MeasurementService";
+import {
+  addImage,
+  getMeasurementById,
+} from "../../services/MeasurementService";
 
 const ListImages = () => {
   useUserAuth();
@@ -33,6 +36,8 @@ const ListImages = () => {
     lensType: "",
     images: [],
   });
+  const [experimentName, setExperimentName] = useState("");
+  const [measurementName, setMeasurementName] = useState("");
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -52,6 +57,19 @@ const ListImages = () => {
       ...formData,
       [e.target.id]: e.target.value,
     });
+  };
+
+  const fetchMeasurementDetails = async () => {
+    try {
+      const res = await getMeasurementById(measurementId);
+      console.log("measurement details:", res);
+      if (res.status === 200) {
+        setMeasurementName(res.metadata.name);
+        setExperimentName(res.metadata.experimentId?.title || "");
+      }
+    } catch {
+      toast.error("Không lấy được thông tin lần đo");
+    }
   };
 
   const fetchImagesOfMeasurement = async () => {
@@ -94,6 +112,7 @@ const ListImages = () => {
 
   useEffect(() => {
     fetchImagesOfMeasurement();
+    fetchMeasurementDetails();
   }, []);
 
   return (
@@ -102,10 +121,19 @@ const ListImages = () => {
         <div className="md:col-span-2">
           <div className="card">
             <div className="flex items-center justify-between">
-              <h5 className="text-lg">Danh sách ảnh</h5>
-              <button className="card-btn" onClick={() => setOpen(true)}>
+              <h5 className="text-lg font-medium flex items-center gap-2 text-gray-700">
+                <span>{experimentName}</span>
+                <span className="text-gray-400">/</span>
+                <span>{measurementName}</span>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-700 font-medium">Danh sách ảnh</span>
+              </h5>
+              <button
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                onClick={() => setOpen(true)}
+              >
                 <IoAddOutline className="text-lg" />
-                <span className="text-lg">Thêm ảnh</span>
+                Thêm ảnh
               </button>
             </div>
             <Dialog
@@ -149,9 +177,7 @@ const ListImages = () => {
                         >
                           <option value="">-- Chọn loại lăng kính --</option>
                           <option value="thường">Lăng kính bình thường</option>
-                          <option value="buồng đếm">
-                            Lăng kính buồng đếm
-                          </option>
+                          <option value="buồng đếm">Lăng kính buồng đếm</option>
                         </select>
                       </div>
                       <div>

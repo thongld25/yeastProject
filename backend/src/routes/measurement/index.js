@@ -16,17 +16,14 @@ router.post(
   asyncHandler(MeasurementController.createMeasurement)
 );
 router.get(
-  "/:experimentId",
+  "/experiment/:experimentId",
   asyncHandler(MeasurementController.getMeasurementByExperimentId)
 );
 router.get(
   "/images/:measurementId",
   asyncHandler(MeasurementController.getImagesByMeasurementId)
 );
-router.get(
-  "/image/:imageId",
-  asyncHandler(MeasurementController.getImageById)
-);
+router.get("/image/:imageId", asyncHandler(MeasurementController.getImageById));
 router.post(
   "/add/images",
   upload.array("images", 10),
@@ -41,5 +38,20 @@ router.post(
   upload.array("images", 10),
   asyncHandler(MeasurementController.createMeasurementv2)
 );
-router.get("/job-status/:jobId", asyncHandler(MeasurementController.getJobStatus));
+router.get(
+  "/job-status/:jobId",
+  asyncHandler(MeasurementController.getJobStatus)
+);
+router.delete(
+  "/delete/:measurementId",
+  asyncHandler(MeasurementController.deleteMeasurement)
+);
+router.put(
+  "/update/:measurementId",
+  asyncHandler(MeasurementController.updateMeasurement)
+);
+router.get(
+  "/:measurementId",
+  asyncHandler(MeasurementController.getMeasurementById)
+);
 module.exports = router;

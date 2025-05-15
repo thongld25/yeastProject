@@ -87,7 +87,30 @@ class MeasurementController {
       });
     }
   };
+
+  deleteMeasurement = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Delete measurement success!",
+      metadata: await MeasurementService.deleteMeasurementById(req.params.measurementId),
+    }).send(res); 
+  };
+
+  updateMeasurement = async (req, res, next) => {
+    const { measurementId } = req.params;
+    const { name, time} = req.body;
+    new SuccessResponse({
+      message: "Update measurement success!",
+      metadata: await MeasurementService.updateMeasurement(measurementId, { name, time}),
+    }).send(res);
+  };
   
+  getMeasurementById = async (req, res, next) => {
+    const { measurementId } = req.params;
+    new SuccessResponse({
+      message: "Get measurement by id success!",
+      metadata: await MeasurementService.getMeasurementById(measurementId),
+    }).send(res);
+  };
 }
 
 module.exports = new MeasurementController();

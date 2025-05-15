@@ -14,6 +14,7 @@ import {
   createExperiment,
   deleteExperiment,
   getExperimentsOfEmployee,
+  updateExperiment,
 } from "../../services/ExperimentService";
 import toast from "react-hot-toast";
 
@@ -23,6 +24,8 @@ const Experiment = () => {
   const [open, setOpen] = useState(false);
   const [experiments, setExperiments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingExperiment, setEditingExperiment] = useState(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -35,6 +38,11 @@ const Experiment = () => {
       ...formData,
       [e.target.id]: e.target.value,
     });
+  };
+
+  const handleOpenEdit = (experiment) => {
+    setEditingExperiment(experiment);
+    setEditOpen(true);
   };
 
   const fetchExperiments = async () => {
@@ -61,9 +69,24 @@ const Experiment = () => {
         toast.error("Xóa thí nghiệm không thành công!");
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Lỗi khi xóa thí nghiệm"
-      );
+      toast.error(error.response?.data?.message || "Lỗi khi xóa thí nghiệm");
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { _id, ...data } = editingExperiment;
+      const res = await updateExperiment(_id, data);
+      if (res.status === 200) {
+        toast.success("Cập nhật thí nghiệm thành công!");
+        fetchExperiments();
+        setEditOpen(false);
+      } else {
+        toast.error("Cập nhật không thành công");
+      }
+    } catch {
+      toast.error("Lỗi khi cập nhật thí nghiệm");
     }
   };
 
@@ -86,9 +109,7 @@ const Experiment = () => {
       setOpen(false);
     } catch (error) {
       console.error("Error:", error);
-      toast.error(
-        error.response?.data?.message || "Lỗi khi tạo thí nghiệm"
-      );
+      toast.error(error.response?.data?.message || "Lỗi khi tạo thí nghiệm");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,10 +125,13 @@ const Experiment = () => {
         <div className="md:col-span-2">
           <div className="card">
             <div className="flex items-center justify-between">
-              <h5 className="text-lg">Các thí nghiệm</h5>
-              <button className="card-btn" onClick={() => setOpen(true)}>
+              <h5 className="text-lg font-semibold">Các thí nghiệm</h5>
+              <button
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                onClick={() => setOpen(true)}
+              >
                 <IoAddOutline className="text-lg" />
-                <span className="text-lg">Thêm thí nghiệm</span>
+                Thêm thí nghiệm
               </button>
             </div>
 
@@ -229,8 +253,99 @@ const Experiment = () => {
                 </DialogPanel>
               </div>
             </Dialog>
+            <Dialog
+              open={editOpen}
+              onClose={() => setEditOpen(false)}
+              className="relative z-50"
+            >
+              <DialogBackdrop className="fixed inset-0 bg-black/50" />
+              <div className="fixed inset-0 flex items-center justify-center p-4">
+                <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
+                  <DialogTitle className="text-xl font-bold mb-6">
+                    Chỉnh sửa thí nghiệm
+                  </DialogTitle>
+                  {editingExperiment && (
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Tiêu đề
+                        </label>
+                        <input
+                          type="text"
+                          value={editingExperiment.title}
+                          onChange={(e) =>
+                            setEditingExperiment({
+                              ...editingExperiment,
+                              title: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
+                          required
+                        />
+                      </div>
 
-            <ExperimentListTable tableData={experiments} onDelete={handleDeleteExperiment} />
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Mô tả
+                        </label>
+                        <input
+                          type="text"
+                          value={editingExperiment.description}
+                          onChange={(e) =>
+                            setEditingExperiment({
+                              ...editingExperiment,
+                              description: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Thời điểm
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={editingExperiment.time?.slice(0, 16) || ""}
+                          onChange={(e) =>
+                            setEditingExperiment({
+                              ...editingExperiment,
+                              time: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-3 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setEditOpen(false)}
+                          className="px-4 py-2 border rounded"
+                        >
+                          Huỷ
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Cập nhật
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </DialogPanel>
+              </div>
+            </Dialog>
+
+            <ExperimentListTable
+              tableData={experiments}
+              onDelete={handleDeleteExperiment}
+              onEdit={handleOpenEdit}
+            />
           </div>
         </div>
       </div>

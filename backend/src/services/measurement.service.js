@@ -13,94 +13,115 @@ const mongoose = require("mongoose");
 const imageProcessingQueue = require("../queue");
 
 class MeasurementService {
-  static async createMeasurementv2(name, experimentId, images, time, imageType, lensType) {
+  static async createMeasurementv2(
+    name,
+    experimentId,
+    images,
+    time,
+    imageType,
+    lensType
+  ) {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
-        // Validate input
-        if (!name || !experimentId || !images?.length || !time || !imageType || !lensType) {
-            throw new BadRequestError("Missing required fields");
-        }
+      // Validate input
+      if (
+        !name ||
+        !experimentId ||
+        !images?.length ||
+        !time ||
+        !imageType ||
+        !lensType
+      ) {
+        throw new BadRequestError("Missing required fields");
+      }
 
-        // Check experiment exists
-        const experiment = await ExperimentService.findById(experimentId, { session });
-        if (!experiment) {
-            throw new NotFoundError("Experiment not found");
-        }
+      // Check experiment exists
+      const experiment = await ExperimentService.findById(experimentId, {
+        session,
+      });
+      if (!experiment) {
+        throw new NotFoundError("Experiment not found");
+      }
 
-        // Create measurement
-        const newMeasurement = await measurementModel.create(
-            [{
-                name,
-                experimentId,
-                time: new Date(time),
-                images: [],
-                status: 'processing'
-            }],
+      // Create measurement
+      const newMeasurement = await measurementModel.create(
+        [
+          {
+            name,
+            experimentId,
+            time: new Date(time),
+            images: [],
+            status: "processing",
+          },
+        ],
+        { session }
+      );
+
+      const measurementDoc = newMeasurement[0];
+      const uploadDir = path.join(__dirname, "../uploads");
+      const savedImages = [];
+
+      // Process images in parallel
+      await Promise.all(
+        images.map(async (image) => {
+          const originalFilename = `${uuidv4()}-${image.originalname}`;
+          const originalPath = path.join(uploadDir, originalFilename);
+
+          // Async file write
+          await fs.promises.writeFile(originalPath, image.buffer);
+
+          // Process mask image
+          let maskFilename = null;
+          if (imageType === "thường" && lensType === "thường") {
+            maskFilename = `mask-${originalFilename}`;
+            const maskPath = path.join(uploadDir, maskFilename);
+            await fs.promises.writeFile(maskPath, image.buffer);
+          }
+
+          // Create image document
+          const [imageDoc] = await imageModel.create(
+            [
+              {
+                originalImage: `/uploads/${originalFilename}`,
+                imageType,
+                lensType,
+                maskImage: maskFilename ? `/uploads/${maskFilename}` : null,
+                measurementId: measurementDoc._id,
+                bacteriaData: null,
+              },
+            ],
             { session }
-        );
+          );
 
-        const measurementDoc = newMeasurement[0];
-        const uploadDir = path.join(__dirname, "../uploads");
-        const savedImages = [];
+          savedImages.push(imageDoc._id);
+        })
+      );
 
-        // Process images in parallel
-        await Promise.all(images.map(async (image) => {
-            const originalFilename = `${uuidv4()}-${image.originalname}`;
-            const originalPath = path.join(uploadDir, originalFilename);
-            
-            // Async file write
-            await fs.promises.writeFile(originalPath, image.buffer);
+      // Update measurement with images
+      measurementDoc.images = savedImages;
+      await measurementDoc.save({ session });
 
-            // Process mask image
-            let maskFilename = null;
-            if (imageType === "thường" && lensType === "thường") {
-                maskFilename = `mask-${originalFilename}`;
-                const maskPath = path.join(uploadDir, maskFilename);
-                await fs.promises.writeFile(maskPath, image.buffer);
-            }
+      // Commit transaction
+      await session.commitTransaction();
 
-            // Create image document
-            const [imageDoc] = await imageModel.create(
-                [{
-                    originalImage: `/uploads/${originalFilename}`,
-                    imageType,
-                    lensType,
-                    maskImage: maskFilename ? `/uploads/${maskFilename}` : null,
-                    measurementId: measurementDoc._id,
-                    bacteriaData: null
-                }],
-                { session }
-            );
+      // Add to queue AFTER transaction
+      const job = await imageProcessingQueue.add({
+        imageIds: savedImages, // Send image IDs instead of raw images
+      });
 
-            savedImages.push(imageDoc._id);
-        }));
-
-        // Update measurement with images
-        measurementDoc.images = savedImages;
-        await measurementDoc.save({ session });
-
-        // Commit transaction
-        await session.commitTransaction();
-
-        // Add to queue AFTER transaction
-        const job = await imageProcessingQueue.add({
-            imageIds: savedImages // Send image IDs instead of raw images
-        });
-
-        return {
-            measurement: measurementDoc,
-            job: job,
-        };
-
+      return {
+        measurement: measurementDoc,
+        job: job,
+      };
     } catch (error) {
-        await session.abortTransaction();
-        throw new Error(`Measurement creation failed: ${error.message}`);
+      await session.abortTransaction();
+      throw new Error(`Measurement creation failed: ${error.message}`);
     } finally {
-        session.endSession();
+      session.endSession();
     }
-}
+  }
 
   // Xử lý hình ảnh trong job
   static async processImages(imageIds) {
@@ -117,19 +138,19 @@ class MeasurementService {
           // 👉 Mock dữ liệu thay vì gọi axios đến server xử lý
           const bounding_boxes = cellData.bounding_boxes;
 
-        const bacteriaData = bounding_boxes.map((bbox) => {
-          return {
-            cell_id: bbox.cell_id,
-            x: bbox.x,
-            y: bbox.y,
-            width: bbox.width,
-            height: bbox.height,
-            type: bbox.type,
-          };
-        });
+          const bacteriaData = bounding_boxes.map((bbox) => {
+            return {
+              cell_id: bbox.cell_id,
+              x: bbox.x,
+              y: bbox.y,
+              width: bbox.width,
+              height: bbox.height,
+              type: bbox.type,
+            };
+          });
 
           image.updateOne({
-            bacteriaData: bacteriaData
+            bacteriaData: bacteriaData,
           });
           await image.save();
           return image;
@@ -522,6 +543,67 @@ class MeasurementService {
 
     await imageModel.findByIdAndDelete(imageId);
     return "Image deleted successfully";
+  }
+  static async deleteMeasurementById(measurementId) {
+    if (!measurementId) {
+      throw new BadRequestError("Missing required fields");
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const measurement = await measurementModel
+        .findById(measurementId)
+        .session(session);
+      if (!measurement) {
+        throw new NotFoundError("Measurement not found");
+      }
+
+      // Xoá ảnh liên quan đến measurement
+      await imageModel.deleteMany({ measurementId }, { session });
+
+      // Xoá measurement
+      await measurementModel.findByIdAndDelete(measurementId).session(session);
+
+      await session.commitTransaction();
+      return "Measurement deleted successfully";
+    } catch (error) {
+      await session.abortTransaction();
+      console.error("❌ Error in deleteMeasurementById:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+  static async updateMeasurement(measurementId, data) {
+    if (!measurementId || !data) {
+      throw new BadRequestError("Missing required fields");
+    }
+    const updatedMeasurement = await measurementModel
+      .findByIdAndUpdate(measurementId, data, { new: true })
+      .lean();
+    if (!updatedMeasurement) {
+      throw new NotFoundError("Measurement not found");
+    }
+    return updatedMeasurement;
+  }
+
+  static async getMeasurementById(measurementId) {
+    if (!measurementId) {
+      throw new BadRequestError("Missing required fields");
+    }
+    const measurement = await measurementModel
+      .findById(measurementId)
+      .populate("experimentId")
+      .lean();
+    if (!measurement) {
+      throw new NotFoundError("Measurement not found");
+    }
+    return measurement;
   }
 }
 module.exports = MeasurementService;
