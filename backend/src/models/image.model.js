@@ -2,6 +2,9 @@
 const mongoose = require("mongoose");
 
 const ImageSchema = new mongoose.Schema({
+  filename: {
+    type: String,
+  },
   // Original Image
   originalImage: {
     type: String,
@@ -14,16 +17,22 @@ const ImageSchema = new mongoose.Schema({
   lensType: String,
   status: {
     type: String,
-    enum: ["pending", "completed"],
+    enum: ["pending", "completed", "failed"],
     default: "pending",
   },
   measurementId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Measurement",
   },
+  points: [
+    {
+      x: Number,
+      y: Number,
+    },
+  ],
   bacteriaData: [
     {
-      cell_id: { type: String},
+      cell_id: { type: String },
       x: Number,
       y: Number,
       width: Number,

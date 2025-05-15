@@ -1,3 +1,4 @@
+// ListImages.jsx
 import React, { useContext, useEffect, useState } from "react";
 import DashbroardLayout from "../../components/layouts/DashbroardLayout";
 import { IoAddOutline } from "react-icons/io5";
@@ -9,14 +10,14 @@ import {
 } from "@headlessui/react";
 import { UserContext } from "../../context/userContext";
 import { useUserAuth } from "../../hooks/useUserAuth";
-import ExperimentListTable from "../../components/ExperimentListTable";
-import {
-  createExperiment,
-  getExperimentsOfEmployee,
-} from "../../services/ExperimentService";
 import toast from "react-hot-toast";
-import { useParams } from "react-router-dom";
-import { getImagesOfMeasurement } from "../../services/ImageService";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  addCountingImage,
+  addMethyleneImage,
+  deleteImage,
+  getImagesOfMeasurement,
+} from "../../services/ImageService";
 import ImageListTable from "../../components/ImageListTable";
 import {
   addImage,
@@ -31,6 +32,7 @@ const ListImages = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const { measurementId } = useParams();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     imageType: "",
     lensType: "",
@@ -62,7 +64,6 @@ const ListImages = () => {
   const fetchMeasurementDetails = async () => {
     try {
       const res = await getMeasurementById(measurementId);
-      console.log("measurement details:", res);
       if (res.status === 200) {
         setMeasurementName(res.metadata.name);
         setExperimentName(res.metadata.experimentId?.title || "");
@@ -75,38 +76,118 @@ const ListImages = () => {
   const fetchImagesOfMeasurement = async () => {
     try {
       const res = await getImagesOfMeasurement(measurementId);
-      console.log(res);
       if (res.status === 200) {
         setImages(res.metadata);
       }
     } catch (error) {
-      toast.error("Failed to fetch measurements");
+      toast.error("Lỗi khi tải danh sách ảnh");
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa ảnh này?");
+    if (!confirmDelete) return;
+    try {
+      const res = await deleteImage(imageId);
+      if (res.status === 200) {
+        toast.success("Xóa ảnh thành công");
+        fetchImagesOfMeasurement();
+      }
+    } catch (error) {
+      toast.error("Xóa ảnh thất bại");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    try {
-      const res = await addImage(
-        measurementId,
-        selectedImages.map((image) => image.file),
-        formData.imageType,
-        formData.lensType
-      );
-      console.log("image data:", formData);
-      if (res.status === 200) {
-        toast.success("image added!");
-        setFormData({ imageType: "", images: [] });
-        setSelectedImages([]);
-        setOpen(false);
-        fetchImagesOfMeasurement();
+    if (formData.imageType === "thường" && formData.lensType === "thường") {
+      try {
+        const res = await addImage(
+          measurementId,
+          selectedImages.map((image) => image.file)
+        );
+        console.log("Upload response:", res);
+        if (
+          res.status === 200 &&
+          res.metadata?.image._id &&
+          res.metadata?.jobId
+        ) {
+          toast.success("Ảnh đã được tải lên, đang xử lý...");
+          navigate(
+            `/analysis/${res.metadata.image._id}?jobId=${res.metadata.jobId}`
+          );
+        } else {
+          throw new Error("Thiếu dữ liệu trả về từ server.");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error(
+          error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
+        );
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Creation failed");
-    } finally {
-      setIsSubmitting(false);
+    } else if (
+      formData.imageType === "methylene" &&
+      formData.lensType === "thường"
+    ) {
+      try {
+        const res = await addMethyleneImage(
+          measurementId,
+          selectedImages.map((image) => image.file)
+        );
+        console.log("Upload response:", res);
+        if (
+          res.status === 200 &&
+          res.metadata?.image._id &&
+          res.metadata?.jobId
+        ) {
+          toast.success("Ảnh đã được tải lên, đang xử lý...");
+          navigate(
+            `/analysis/${res.metadata.image._id}?jobId=${res.metadata.jobId}`
+          );
+        } else {
+          throw new Error("Thiếu dữ liệu trả về từ server.");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error(
+          error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (
+      formData.imageType === "thường" &&
+      formData.lensType === "buồng đếm"
+    ) {
+      try {
+        const res = await addCountingImage(
+          measurementId,
+          selectedImages.map((image) => image.file)
+        );
+        console.log("Upload response:", res);
+        if (
+          res.status === 200 &&
+          res.metadata?.image._id &&
+          res.metadata?.jobId
+        ) {
+          toast.success("Ảnh đã được tải lên, đang xử lý...");
+          navigate(
+            `/analysis/${res.metadata.image._id}?jobId=${res.metadata.jobId}`
+          );
+        } else {
+          throw new Error("Thiếu dữ liệu trả về từ server.");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error(
+          error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -213,7 +294,6 @@ const ListImages = () => {
                             />
                           </label>
                         </div>
-
                         <div className="grid grid-cols-4 gap-4 mt-4">
                           {selectedImages.map((image, index) => (
                             <div key={index} className="relative group">
@@ -246,7 +326,6 @@ const ListImages = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="mt-8 flex justify-end space-x-4">
                       <button
                         type="button"
@@ -270,9 +349,7 @@ const ListImages = () => {
                             <svg
                               className="animate-spin h-5 w-5 mr-2"
                               viewBox="0 0 24 24"
-                            >
-                              {/* Loading spinner SVG */}
-                            </svg>
+                            />
                             Đang thêm...
                           </div>
                         ) : (
@@ -284,7 +361,7 @@ const ListImages = () => {
                 </DialogPanel>
               </div>
             </Dialog>
-            <ImageListTable tableData={images} />
+            <ImageListTable tableData={images} onDelete={handleDeleteImage} />
           </div>
         </div>
       </div>

@@ -1,13 +1,14 @@
 const imageProcessingQueue = require('../queue');
 const Measurement = require('../models/measurement.model');
 const MeasurementService = require('../services/measurement.service');
+const ImageService = require('../services/image.service');
 
 // Cấu hình Bull để xử lý job
 imageProcessingQueue.process(async (job) => {
-  const { imageIds } = job.data;
+  const { imageId } = job.data;
   try {
     // 1. Gọi API bên ngoài để xử lý hình ảnh
-    await MeasurementService.processImages(imageIds);
+    await ImageService.processImage(imageId);
     console.log('Image processing completed');
   } catch (error) {
     console.error('Error processing image:', error);

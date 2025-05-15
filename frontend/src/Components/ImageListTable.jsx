@@ -4,25 +4,11 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { deleteImage } from "../services/ImageService";
 
-const ImageListTable = ({ tableData }) => {
+const ImageListTable = ({ tableData, onDelete }) => {
   const navigate = useNavigate();
   const handleRowClick = (imageId) => {
     navigate(`/analysis/${imageId}`);
   };
-  const handleDelete = async (imageId) => {
-      try {
-        const res = await deleteImage(imageId);
-        console.log(res);
-        if (res.status === 200) {
-            console.log("Image deleted successfully!", res);
-            toast.success("Image deleted successfully!");
-            // Optionally, you can refresh the page or update the state to reflect the deletion
-        }
-      } catch (error) {
-        toast.error("Failed to delete image");
-        console.error("Error deleting image:", error);
-      }
-    };
 
   return (
     <div className="overflow-x-auto mt-4">
@@ -84,7 +70,7 @@ const ImageListTable = ({ tableData }) => {
 
                     <button
                       className="text-red-600 hover:text-red-800"
-                      onClick={() => handleDelete(item._id)}
+                      onClick={() => onDelete(item._id)}
                     >
                       <FiTrash2 className="w-5 h-5" />
                     </button>

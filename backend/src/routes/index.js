@@ -15,5 +15,6 @@ router.use('/v1/api/experiment', require('./experiment'));
 router.use('/v1/api/factory', require('./factory'));
 router.use('/v1/api/user', require('./user'));
 router.use('/v1/api/measurement', require('./measurement'));
+router.use('/v1/api/image', require('./image'));
 
 module.exports = router;

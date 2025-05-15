@@ -12,7 +12,6 @@ router.use(authentication);
 
 router.post(
   "/add",
-  upload.array("images", 10),
   asyncHandler(MeasurementController.createMeasurement)
 );
 router.get(

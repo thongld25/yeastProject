@@ -1,59 +1,98 @@
+// AnalysisImage.jsx
 import React, { useContext, useEffect, useState } from "react";
 import DashbroardLayout from "../../components/layouts/DashbroardLayout";
-import { UserContext } from "../../context/userContext";
 import { useUserAuth } from "../../hooks/useUserAuth";
+import { UserContext } from "../../context/userContext";
+import { useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useParams } from "react-router-dom";
-import { getImagesById } from "../../services/ImageService";
+import { getImagesById, getJobStatus } from "../../services/ImageService";
 import BacteriaImage from "../../components/BacteriaImage";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const AnalysisImage = () => {
   useUserAuth();
-  const { user } = useContext(UserContext);
   const { imageId } = useParams();
+  const { user } = useContext(UserContext);
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get("jobId");
+
   const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const pollingIntervalRef = React.useRef(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
   const [cellStats, setCellStats] = useState(null);
+  const [showSquares, setShowSquares] = useState(true);
 
   const fetchImage = async () => {
     try {
       const res = await getImagesById(imageId);
-      console.log(res);
-      if (res.status === 200) {
-        setImage(res.metadata);
-        let stats;
+      console.log("Fetched image data:", res);
+      if (res.status === 200 && res.metadata) {
+        const img = res.metadata;
 
-        if (res.metadata.imageType === "methylene") {
-          stats = {
-            alive: 0,
-            dead: 0,
-          };
-          res.metadata.bacteriaData?.forEach((cell) => {
-            if (cell.status === "alive") stats.alive++;
-            else if (cell.status === "dead") stats.dead++;
-          });
-        } else {
-          stats = {
-            normal: 0,
-            abnormal: 0,
-            normal_2x: 0,
-            abnormal_2x: 0,
-          };
-          res.metadata.bacteriaData?.forEach((cell) => {
-            if (cell.type && stats.hasOwnProperty(cell.type)) {
-              stats[cell.type]++;
+        setImage(img);
+
+        if (img.status === "pending" && jobId) {
+          const intervalId = setInterval(async () => {
+            try {
+              const jobRes = await getJobStatus(jobId);
+              console.log("Job status response:", jobRes);
+              if (jobRes.status === "completed") {
+                clearInterval(intervalId);
+                pollingIntervalRef.current = null;
+                toast.success("Phân tích ảnh hoàn tất");
+                fetchImage();
+              } else if (jobRes.status === "failed") {
+                clearInterval(intervalId);
+                pollingIntervalRef.current = null;
+                toast.error("Phân tích ảnh thất bại");
+              }
+            } catch (err) {
+              console.error("Polling job status error:", err);
             }
-          });
+          }, 5000);
+          pollingIntervalRef.current = intervalId;
         }
-        setCellStats(stats);
+
+        if (img.status === "completed") {
+          let stats;
+          if (img.imageType === "methylene") {
+            stats = { alive: 0, dead: 0 };
+            img.bacteriaData?.forEach((cell) => {
+              if (cell.type === "alive") stats.alive++;
+              else if (cell.type === "dead") stats.dead++;
+            });
+          } else {
+            stats = {
+              normal: 0,
+              abnormal: 0,
+              normal_2x: 0,
+              abnormal_2x: 0,
+            };
+            img.bacteriaData?.forEach((cell) => {
+              if (cell.type && stats.hasOwnProperty(cell.type)) {
+                stats[cell.type]++;
+              }
+            });
+          }
+          setCellStats(stats);
+        }
+        setLoading(false);
       }
     } catch (error) {
-      console.error("Error fetching image:", error);
-      toast.error("Failed to fetch image");
+      console.error("Fetch image error:", error);
+      toast.error("Không lấy được thông tin ảnh");
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchImage();
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    };
+  }, []);
 
   const LegendBox = ({ color, label }) => (
     <div className="flex items-center gap-2">
@@ -65,9 +104,30 @@ const AnalysisImage = () => {
     </div>
   );
 
-  useEffect(() => {
-    fetchImage();
-  }, []);
+  if (loading || (image && image.status !== "completed")) {
+    return (
+      <DashbroardLayout activeMenu="Thí nghiệm">
+        <div className="text-center mt-20 text-lg font-semibold">
+          Ảnh đang được phân tích, vui lòng đợi...
+        </div>
+        {image && (
+          <div className="mt-6 max-w-md mx-auto">
+            <h2 className="text-lg font-semibold mb-2 text-center">Ảnh gốc</h2>
+            <img
+              src={`http://localhost:3055${image.originalImage}`}
+              alt="Original"
+              className="w-full rounded shadow"
+              crossOrigin="anonymous"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/uploads/mau.jpeg";
+              }}
+            />
+          </div>
+        )}
+      </DashbroardLayout>
+    );
+  }
 
   return (
     <DashbroardLayout activeMenu="Thí nghiệm">
@@ -79,10 +139,10 @@ const AnalysisImage = () => {
               src={`http://localhost:3055${image.originalImage}`}
               alt="Original"
               className="w-full rounded shadow"
-              crossOrigin="anonymous" // Thêm thuộc tính này
+              crossOrigin="anonymous"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src ="/uploads/mau.jpeg"; // Placeholder image if original fails to load
+                e.target.src = "/uploads/mau.jpeg";
               }}
             />
           )}
@@ -95,6 +155,9 @@ const AnalysisImage = () => {
               <BacteriaImage
                 imagePath={`http://localhost:3055${image.originalImage}`}
                 bacteriaData={image.bacteriaData}
+                lensType={image.lensType}
+                points={image.points}
+                showSquares={showSquares}
               />
             </div>
           )}
@@ -110,14 +173,23 @@ const AnalysisImage = () => {
               crossOrigin="anonymous"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src ="/uploads/mau.jpeg"; // Placeholder image if original fails to load
+                e.target.src = "/uploads/mau.jpeg";
               }}
             />
           </div>
         )}
       </div>
+      {image?.lensType === "buồng đếm" && (
+          <div className="my-4">
+            <button
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              onClick={() => setShowSquares((prev) => !prev)}
+            >
+              {showSquares ? "Ẩn 16 ô vuông" : "Hiện 16 ô vuông"}
+            </button>
+          </div>
+        )}
 
-      {/* Modal hiển thị ảnh phân tích phóng to */}
       {modalOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
@@ -132,11 +204,13 @@ const AnalysisImage = () => {
                 <BacteriaImage
                   imagePath={`http://localhost:3055${image.originalImage}`}
                   bacteriaData={image.bacteriaData}
+                  lensType={image.lensType}
+                  points={image.points}
+                  showSquares={showSquares}
                   onCellClick={(cell) => setSelectedCell(cell)}
                 />
               </TransformComponent>
             </TransformWrapper>
-
             <div className="text-center mt-4">
               <button
                 className="px-4 py-2 bg-red-500 text-white rounded"
@@ -148,6 +222,7 @@ const AnalysisImage = () => {
           </div>
         </div>
       )}
+
       {selectedCell && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
@@ -165,40 +240,34 @@ const AnalysisImage = () => {
               alt={`Bacteria ${selectedCell.cell_id}`}
               className="max-w-full max-h-[85vh] object-contain mb-4"
             />
-
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <strong>Diện tích (area):</strong> {selectedCell.area}
+                <strong>Diện tích:</strong> {selectedCell.area}
               </div>
               <div>
-                <strong>Chu vi (perimeter):</strong> {selectedCell.perimeter}
+                <strong>Chu vi:</strong> {selectedCell.perimeter}
               </div>
               <div>
-                <strong>Độ tròn (circularity):</strong>{" "}
-                {selectedCell.circularity}
+                <strong>Độ tròn:</strong> {selectedCell.circularity}
               </div>
               <div>
-                <strong>Đường kính lồi (CE_diameterconvexity):</strong>{" "}
+                <strong>Đường kính lồi:</strong>{" "}
                 {selectedCell.CE_diameterconvexity}
               </div>
               <div>
-                <strong>Trục lớn (major axis):</strong>{" "}
-                {selectedCell.major_axis_length}
+                <strong>Trục lớn:</strong> {selectedCell.major_axis_length}
               </div>
               <div>
-                <strong>Trục nhỏ (minor axis):</strong>{" "}
-                {selectedCell.minor_axis_length}
+                <strong>Trục nhỏ:</strong> {selectedCell.minor_axis_length}
               </div>
               <div>
-                <strong>Tỉ lệ khung hình (aspect ratio):</strong>{" "}
-                {selectedCell.aspect_ratio}
+                <strong>Tỉ lệ khung hình:</strong> {selectedCell.aspect_ratio}
               </div>
               <div>
-                <strong>Khoảng cách lớn nhất (max distance):</strong>{" "}
+                <strong>Khoảng cách lớn nhất:</strong>{" "}
                 {selectedCell.max_distance}
               </div>
             </div>
-
             <button
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
               onClick={() => setSelectedCell(null)}
@@ -237,11 +306,11 @@ const AnalysisImage = () => {
                   <span>{cellStats.abnormal}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tế bào đang nảy chồi bình thường:</span>
+                  <span>Nảy chồi bình thường:</span>
                   <span>{cellStats.normal_2x}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tế bào đang nảy chồi bất thường:</span>
+                  <span>Nảy chồi bất thường:</span>
                   <span>{cellStats.abnormal_2x}</span>
                 </div>
               </>
@@ -249,17 +318,18 @@ const AnalysisImage = () => {
           </div>
         </div>
       )}
+
       {image?.imageType === "methylene" ? (
         <div className="mt-4 flex flex-wrap gap-4">
           <LegendBox color="green" label="Tế bào sống" />
-          <LegendBox color="gray" label="Tế bào chết" />
+          <LegendBox color="red" label="Tế bào chết" />
         </div>
       ) : (
         <div className="mt-4 flex flex-wrap gap-4">
-          <LegendBox color="green" label="Tế bào bình thường" />
-          <LegendBox color="red" label="Tế bào bất thường" />
-          <LegendBox color="blue" label="Tế bào nảy chồi bình thường" />
-          <LegendBox color="purple" label="Tế bào nảy chồi bất thường" />
+          <LegendBox color="green" label="Bình thường" />
+          <LegendBox color="red" label="Bất thường" />
+          <LegendBox color="blue" label="Nảy chồi bình thường" />
+          <LegendBox color="purple" label="Nảy chồi bất thường" />
         </div>
       )}
     </DashbroardLayout>
