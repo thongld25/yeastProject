@@ -30,14 +30,21 @@ class UserController {
       message: "Delete user by id success!",
       metadata: await UserService.deleteUser(req.params.userId),
     }).send(res);
-  }
+  };
 
   updateUser = async (req, res, next) => {
     new SuccessResponse({
       message: "Update user by id success!",
       metadata: await UserService.updateUser(req.params.userId, req.body),
     }).send(res);
-  }
+  };
+  countingExperimentOfUser = async (req, res, next) => {
+    const { userId } = req.params;
+    new SuccessResponse({
+      message: "Counting experiment of user success!",
+      metadata: await UserService.countingExperimentOfUser(userId),
+    }).send(res);
+  };
 }
 
 module.exports = new UserController();

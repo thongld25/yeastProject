@@ -1,5 +1,5 @@
 import React from "react";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiBarChart2 } from "react-icons/fi";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 
@@ -47,12 +47,14 @@ const ExperimentListTable = ({ tableData, onDelete, onEdit }) => {
                 <td className="px-4 py-3 text-center">
                   <div className="flex justify-center items-center gap-2">
                     <button
+                      title="Chỉnh sửa"
                       className="text-blue-600 hover:text-blue-800"
-                      onClick={() => onEdit(experiment)} // ✅ sửa tại đây
+                      onClick={() => onEdit(experiment)}
                     >
                       <FiEdit className="w-5 h-5" />
                     </button>
                     <button
+                      title="Xoá"
                       className="text-red-600 hover:text-red-800"
                       onClick={() => {
                         const confirmDelete = window.confirm(
@@ -62,6 +64,17 @@ const ExperimentListTable = ({ tableData, onDelete, onEdit }) => {
                       }}
                     >
                       <FiTrash2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      title="Thống kê"
+                      className="text-green-600 hover:text-green-800"
+                      onClick={() =>
+                        navigate(
+                          `/employee/statistics/by-experiment?experimentId=${experiment._id}`
+                        )
+                      }
+                    >
+                      <FiBarChart2 className="w-5 h-5" />
                     </button>
                   </div>
                 </td>

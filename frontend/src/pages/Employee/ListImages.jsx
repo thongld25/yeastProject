@@ -45,6 +45,7 @@ const ListImages = () => {
     const files = Array.from(e.target.files);
     const imagesArray = files.map((file) => ({
       file,
+      name: "",
       preview: URL.createObjectURL(file),
     }));
     setSelectedImages((prev) => [...prev, ...imagesArray]);
@@ -101,93 +102,55 @@ const ListImages = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    if (formData.imageType === "thường" && formData.lensType === "thường") {
-      try {
-        const res = await addImage(
-          measurementId,
-          selectedImages.map((image) => image.file)
-        );
-        console.log("Upload response:", res);
+
+    if (selectedImages.some((img) => !img.name.trim())) {
+      toast.error("Vui lòng nhập tên cho tất cả ảnh.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      for (const image of selectedImages) {
+        let res;
+
+        if (formData.imageType === "thường" && formData.lensType === "thường") {
+          res = await addImage(measurementId, image.file, image.name);
+        } else if (
+          formData.imageType === "methylene" &&
+          formData.lensType === "thường"
+        ) {
+          res = await addMethyleneImage(measurementId, image.file, image.name);
+        } else if (
+          formData.imageType === "thường" &&
+          formData.lensType === "buồng đếm"
+        ) {
+          res = await addCountingImage(measurementId, image.file, image.name);
+        }
+
         if (
-          res.status === 200 &&
+          res?.status === 200 &&
           res.metadata?.image._id &&
           res.metadata?.jobId
         ) {
-          toast.success("Ảnh đã được tải lên, đang xử lý...");
+          toast.success(`Ảnh "${image.name}" đã được tải lên, đang xử lý...`);
           navigate(
             `/analysis/${res.metadata.image._id}?jobId=${res.metadata.jobId}`
           );
         } else {
           throw new Error("Thiếu dữ liệu trả về từ server.");
         }
-      } catch (error) {
-        console.error("Upload error:", error);
-        toast.error(
-          error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
-        );
-      } finally {
-        setIsSubmitting(false);
       }
-    } else if (
-      formData.imageType === "methylene" &&
-      formData.lensType === "thường"
-    ) {
-      try {
-        const res = await addMethyleneImage(
-          measurementId,
-          selectedImages.map((image) => image.file)
-        );
-        console.log("Upload response:", res);
-        if (
-          res.status === 200 &&
-          res.metadata?.image._id &&
-          res.metadata?.jobId
-        ) {
-          toast.success("Ảnh đã được tải lên, đang xử lý...");
-          navigate(
-            `/analysis/${res.metadata.image._id}?jobId=${res.metadata.jobId}`
-          );
-        } else {
-          throw new Error("Thiếu dữ liệu trả về từ server.");
-        }
-      } catch (error) {
-        console.error("Upload error:", error);
-        toast.error(
-          error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else if (
-      formData.imageType === "thường" &&
-      formData.lensType === "buồng đếm"
-    ) {
-      try {
-        const res = await addCountingImage(
-          measurementId,
-          selectedImages.map((image) => image.file)
-        );
-        console.log("Upload response:", res);
-        if (
-          res.status === 200 &&
-          res.metadata?.image._id &&
-          res.metadata?.jobId
-        ) {
-          toast.success("Ảnh đã được tải lên, đang xử lý...");
-          navigate(
-            `/analysis/${res.metadata.image._id}?jobId=${res.metadata.jobId}`
-          );
-        } else {
-          throw new Error("Thiếu dữ liệu trả về từ server.");
-        }
-      } catch (error) {
-        console.error("Upload error:", error);
-        toast.error(
-          error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
+
+      setOpen(false);
+      setSelectedImages([]);
+      fetchImagesOfMeasurement(); // Refresh danh sách sau khi thêm xong
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(
+        error?.response?.data?.message || error?.message || "Tải ảnh thất bại"
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -301,6 +264,18 @@ const ListImages = () => {
                                 src={image.preview}
                                 alt={`preview ${index}`}
                                 className="h-24 w-full object-cover rounded-lg"
+                              />
+                              <input
+                                type="text"
+                                value={image.name}
+                                onChange={(e) => {
+                                  const newImages = [...selectedImages];
+                                  newImages[index].name = e.target.value;
+                                  setSelectedImages(newImages);
+                                }}
+                                className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                placeholder="Nhập tên ảnh..."
+                                required
                               />
                               <button
                                 type="button"

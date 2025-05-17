@@ -6,15 +6,17 @@ import SideMenu from "./SideMenu";
 const DashbroardLayout = ({ children, activeMenu }) => {
   const { user } = useContext(UserContext);
   return (
-    <div className="">
+    <div className="min-h-screen flex flex-col">
       <Navbar activeMenu={activeMenu} />
       {user && (
-        <div className="flex">
-          <div className="max-[1080px]:hidden">
+        <div className="flex flex-1">
+          <div className="hidden max-[1080px]:hidden lg:block">
             <SideMenu activeMenu={activeMenu} />
           </div>
 
-          <div className="grow mx-5">{children}</div>
+          <main className="flex-1 overflow-auto px-5 py-4">
+            {children}
+          </main>
         </div>
       )}
     </div>

@@ -14,22 +14,26 @@
 
   body {
     background-color: #fcfbfc;
-    overflow: hidden;
+    overflow: auto;
   }
 }
 
+/* Đã thay bg-slate-100/50 ➝ bg-slate-100 */
 .input-box {
-  @apply w-full flex justify-between gap-3 text-sm text-black bg-slate-100/50 rounded px-4 py-3 mb-4 mt-3 border border-slate-200 outline-none;
+  @apply w-full flex justify-between gap-3 text-sm text-black bg-slate-100 rounded px-4 py-3 mb-4 mt-3 border border-slate-200 outline-none;
 }
 
+/* Đã thay shadow-purple-600/5 ➝ shadow, hover:bg-blue-600/15 ➝ hover:bg-blue-100 */
 .btn-primary {
-  @apply w-full text-sm font-medium text-white bg-primary shadow-lg shadow-purple-600/5 p-[10px] rounded-md my-1 hover:bg-blue-600/15 hover:text-blue-600 cursor-pointer;
+  @apply w-full text-sm font-medium text-white bg-primary shadow p-[10px] rounded-md my-1 hover:bg-blue-100 hover:text-blue-600 cursor-pointer;
 }
 
+/* Đã thay shadow-gray-100 ➝ shadow-md, border-gray-200/50 ➝ border-gray-200 */
 .card {
-  @apply bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50;
+  @apply bg-white p-6 rounded-2xl shadow-md border border-gray-200;
 }
 
+/* Đã thay border-gray-200/50 ➝ border-gray-200 */
 .card-btn {
-  @apply flex items-center gap-3 text-[12px] font-medium text-gray-700 hover:text-primary bg-gray-50 hover:bg-blue-50 px-4 py-1.5 rounded-lg border border-gray-200/50 cursor-pointer;
+  @apply flex items-center gap-3 text-[12px] font-medium text-gray-700 hover:text-primary bg-gray-50 hover:bg-blue-50 px-4 py-1.5 rounded-lg border border-gray-200 cursor-pointer;
 }

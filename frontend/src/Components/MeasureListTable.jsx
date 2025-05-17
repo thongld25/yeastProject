@@ -1,6 +1,6 @@
 import moment from "moment";
 import React from "react";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiBarChart2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
@@ -49,16 +49,29 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
                 <td className="px-4 py-3 text-center">
                   <div className="flex justify-center gap-2">
                     <button
+                      title="Chỉnh sửa"
                       className="text-blue-600 hover:text-blue-800"
                       onClick={() => onEdit?.(item)}
                     >
                       <FiEdit className="w-5 h-5" />
                     </button>
                     <button
+                      title="Xoá"
                       className="text-red-600 hover:text-red-800"
                       onClick={() => onDelete?.(item._id)}
                     >
                       <FiTrash2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      className="text-green-600 hover:text-green-800"
+                      title="Thống kê"
+                      onClick={() =>
+                        navigate(
+                          `/employee/statistics/by-measurement?measurementId=${item._id}`
+                        )
+                      }
+                    >
+                      <FiBarChart2 className="w-5 h-5" />
                     </button>
                   </div>
                 </td>

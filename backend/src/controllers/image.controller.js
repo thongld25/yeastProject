@@ -7,10 +7,11 @@ class ImageController {
   addNormalImageByMeasurementId = async (req, res, next) => {
     try {
       const { measurementId } = req.params;
+      const {name} = req.body;
       const image = req.file;
       new SuccessResponse({
         message: "Add image success!",
-        metadata: await ImageService.addNormalImage(measurementId, image),
+        metadata: await ImageService.addNormalImage(measurementId, image, name),
       }).send(res);
     } catch (err) {
       next(err);
@@ -20,10 +21,11 @@ class ImageController {
   addMethyleneImageByMeasurementId = async (req, res, next) => {
     try {
       const { measurementId } = req.params;
+      const {name} = req.body;
       const image = req.file;
       new SuccessResponse({
         message: "Add image success!",
-        metadata: await ImageService.addMethyleneImage(measurementId, image),
+        metadata: await ImageService.addMethyleneImage(measurementId, image, name),
       }).send(res);
     } catch (err) {
       next(err);
@@ -33,10 +35,11 @@ class ImageController {
   addCountingImageByMeasurementId = async (req, res, next) => {
     try {
       const { measurementId } = req.params;
+      const {name} = req.body;
       const image = req.file;
       new SuccessResponse({
         message: "Add image success!",
-        metadata: await ImageService.addCountingImage(measurementId, image),
+        metadata: await ImageService.addCountingImage(measurementId, image, name),
       }).send(res);
     } catch (err) {
       next(err);

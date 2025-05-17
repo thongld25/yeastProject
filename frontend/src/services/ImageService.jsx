@@ -73,13 +73,12 @@ export async function getJobStatus(jobId) {
     }
 }
 
-export async function addMethyleneImage(measurementId, images) {
+export async function addMethyleneImage(measurementId, image, name) {
   try {
     const userId = localStorage.getItem("userId");
     const formData = new FormData();
-    images.forEach((image) => {
-      formData.append("image", image);
-    });
+    formData.append("image", image);
+    formData.append("name", name);
     const res = await axios.post(
       `${API_BASE_URL}/image/add/methylene/${measurementId}`,
       formData,
@@ -100,13 +99,12 @@ export async function addMethyleneImage(measurementId, images) {
   }
 }
 
-export async function addCountingImage(measurementId, images) {
+export async function addCountingImage(measurementId, image, name) {
   try {
     const userId = localStorage.getItem("userId");
     const formData = new FormData();
-    images.forEach((image) => {
-      formData.append("image", image);
-    });
+    formData.append("image", image);
+    formData.append("name", name);
     const res = await axios.post(
       `${API_BASE_URL}/image/add/counting/${measurementId}`,
       formData,

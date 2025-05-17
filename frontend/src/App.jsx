@@ -17,6 +17,9 @@ import Experiment from "./pages/Employee/Experiment";
 import Measurement from "./pages/Employee/Measurement";
 import AnalysisImage from "./pages/Employee/AnalysisImage";
 import ListImages from "./pages/Employee/ListImages";
+import Blog from "./pages/Employee/Blog";
+import StatisticsByExperiment from "./pages/Employee/StatisticsByExperiment";
+import StatisticsByMeasurement from "./pages/Employee/StatisticsByMeasurement";
 
 const App = () => {
   return (
@@ -41,21 +44,21 @@ const App = () => {
                 path="/employee/dashboard"
                 element={<EmployeeDashbroad />}
               />
-              <Route
-                path="/employee/experiment"
-                element={<Experiment />}
-              />
+              <Route path="/employee/experiment" element={<Experiment />} />
               <Route
                 path="/experiment/:experimentId"
                 element={<Measurement />}
               />
+              <Route path="/images/:measurementId" element={<ListImages />} />
+              <Route path="/analysis/:imageId" element={<AnalysisImage />} />
+              <Route path="/blog" element={<Blog />} />
               <Route
-                path="/images/:measurementId"
-                element={<ListImages />}
+                path="/employee/statistics/by-experiment"
+                element={<StatisticsByExperiment />}
               />
               <Route
-                path="/analysis/:imageId"
-                element={<AnalysisImage />}
+                path="/employee/statistics/by-measurement"
+                element={<StatisticsByMeasurement />}
               />
             </Route>
 

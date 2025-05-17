@@ -158,6 +158,27 @@ class UserService {
     if (!updatedUser) throw new BadRequestError("Failed to update user");
     return updatedUser;
   }
+  static async countingExperimentOfUser(userId) {
+    if (!userId) throw new BadRequestError("User ID is required");
+    const user = await userModel.findById(userId);
+    if (!user) throw new BadRequestError("User not found");
+    const experiments = await experimentModel.find({ userId });
+    if (!experiments) throw new BadRequestError("Experiments not found");
+    const experimentIds = experiments.map((exp) => exp._id);
+    const measurements = await mearurementModel.find({
+      experimentId: { $in: experimentIds },
+    });
+    if (!measurements) throw new BadRequestError("Measurements not found");
+    const measurementIds = measurements.map((m) => m._id);
+    const images = await imageModel.find({
+      measurementId: { $in: measurementIds },
+    });
+    return {
+      experimentCount: experiments.length,
+      measurementCount: measurements.length,
+      imageCount: images.length
+    };
+  }
 }
 
 module.exports = UserService;

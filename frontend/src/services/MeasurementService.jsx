@@ -44,13 +44,12 @@ export async function createMeasurement(name, experimentId, time) {
   }
 }
 
-export async function addImage(measurementId, images) {
+export async function addImage(measurementId, image, name) {
   try {
     const userId = localStorage.getItem("userId");
     const formData = new FormData();
-    images.forEach((image) => {
-      formData.append("image", image);
-    });
+    formData.append("image", image);
+    formData.append("name", name);
     const res = await axios.post(
       `${API_BASE_URL}/image/add/${measurementId}`,
       formData,

@@ -12,6 +12,7 @@ router.use(authentication);
 router.post("/add", asyncHandler(userController.createUser));
 router.get("/factory/:factoryId", asyncHandler(userController.getUserOfFactory));
 router.get("/:userId", asyncHandler(userController.getUserById));
+router.get("/counting/:userId", asyncHandler(userController.countingExperimentOfUser));
 router.delete("/delete/:userId", asyncHandler(userController.deleteUserById));
 router.put("/update/:userId", asyncHandler(userController.updateUser));
 

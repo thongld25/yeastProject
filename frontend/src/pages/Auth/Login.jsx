@@ -5,7 +5,6 @@ import Input from "../../components/Inputs/Input";
 import { validateEmail } from "../../utils/helper";
 import { login } from "../../services/AuthService";
 import { UserContext } from "../../context/userContext";
-import OpenCvTest from "../../components/OpenCvTest";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,7 +13,6 @@ const Login = () => {
 
   const { updateUser } = useContext(UserContext);
   const navigate = useNavigate();
-
   const handleLogin = async (e) => {
     e.preventDefault();
     

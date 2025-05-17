@@ -16,5 +16,6 @@ router.use('/v1/api/factory', require('./factory'));
 router.use('/v1/api/user', require('./user'));
 router.use('/v1/api/measurement', require('./measurement'));
 router.use('/v1/api/image', require('./image'));
+router.use('/v1/api/statictis', require('./statictis'));
 
 module.exports = router;

@@ -14,7 +14,7 @@ const points = require("../data/mockData.js").points;
 
 class ImageService {
   // add normal image with normal lens
-  static async addNormalImage(measurementId, image) {
+  static async addNormalImage(measurementId, image, name) {
     if (!measurementId) throw new BadRequestError("Measurement ID is required");
     if (!image) throw new BadRequestError("Images are required");
     if (!image.mimetype.startsWith("image/")) {
@@ -34,6 +34,7 @@ class ImageService {
 
     // Thêm thông tin ảnh vào cơ sở dữ liệu
     const newImage = await imageModel.create({
+      name: name,
       filename: originalFilename,
       originalImage: `/uploads/${originalFilename}`,
       imageType: "thường",
@@ -53,7 +54,7 @@ class ImageService {
   }
 
   // add methylene image with normal lens
-  static async addMethyleneImage(measurementId, image) {
+  static async addMethyleneImage(measurementId, image, name) {
     if (!measurementId) throw new BadRequestError("Measurement ID is required");
     if (!image) throw new BadRequestError("Images are required");
     if (!image.mimetype.startsWith("image/")) {
@@ -73,6 +74,7 @@ class ImageService {
 
     // Thêm thông tin ảnh vào cơ sở dữ liệu
     const newImage = await imageModel.create({
+      name: name,
       filename: originalFilename,
       originalImage: `/uploads/${originalFilename}`,
       imageType: "methylene",
@@ -92,7 +94,7 @@ class ImageService {
   }
 
   // add image with counting lens
-  static async addCountingImage(measurementId, image) {
+  static async addCountingImage(measurementId, image, name) {
     if (!measurementId) throw new BadRequestError("Measurement ID is required");
     if (!image) throw new BadRequestError("Images are required");
     if (!image.mimetype.startsWith("image/")) {
@@ -112,6 +114,7 @@ class ImageService {
 
     // Thêm thông tin ảnh vào cơ sở dữ liệu
     const newImage = await imageModel.create({
+      name: name,
       filename: originalFilename,
       originalImage: `/uploads/${originalFilename}`,
       imageType: "thường",

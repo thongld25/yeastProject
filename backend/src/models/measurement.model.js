@@ -16,10 +16,6 @@ var measurementSchema = new mongoose.Schema({
         ref:'Experiment',
         required:true
     },
-    images:[{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Image'
-    }], 
     time:{
         type:Date,
         default:Date.now
