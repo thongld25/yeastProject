@@ -11,9 +11,16 @@ const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
 const imageProcessingQueue = require("../queue");
+const userModel = require("../models/user.model.js");
 
 class MeasurementService {
-  static async createMeasurement(name, experimentId, time) {
+  static async createMeasurement(
+    name,
+    experimentId,
+    time,
+    imageType,
+    lensType
+  ) {
     if (!name || !experimentId || !time) {
       throw new BadRequestError("Missing required fields");
     }
@@ -25,6 +32,8 @@ class MeasurementService {
       name,
       experimentId,
       time: new Date(time),
+      imageType,
+      lensType,
     });
     if (!newMeasurement) {
       throw new BadRequestError("Measurement creation failed");
@@ -150,6 +159,108 @@ class MeasurementService {
       throw new NotFoundError("Measurement not found");
     }
     return measurement;
+  }
+
+  static async getMeasurementOfUser(userId, { page = 1, limit = 10 }) {
+    if (!userId) {
+      throw new BadRequestError("Missing required fields");
+    }
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) {
+      throw new NotFoundError("User not found");
+    }
+    const experiment = await experimentModel
+      .find({ userId: userId })
+      .select("_id")
+      .lean();
+    if (!experiment) {
+      throw new NotFoundError("Experiment not found");
+    }
+    const experimentIds = experiment.map((e) => e._id);
+    const skip = (page - 1) * limit;
+    const [measurements, total] = await Promise.all([
+      measurementModel
+        .find({ experimentId: { $in: experimentIds } })
+        .skip(skip)
+        .limit(limit)
+        .populate("experimentId")
+        .lean(),
+      measurementModel
+        .countDocuments({ experimentId: { $in: experimentIds } })
+        .lean(),
+    ]);
+    if (!measurements) {
+      throw new NotFoundError("Measurements not found");
+    }
+    return {
+      measurements,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  static async searchMeasurements({
+    userId,
+    name,
+    startTime,
+    endTime,
+    page = 1,
+    limit = 10,
+  }) {
+    if (!userId) {
+      throw new BadRequestError("Missing required fields");
+    }
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) {
+      throw new NotFoundError("User not found");
+    }
+    const experiment = await experimentModel
+      .find({ userId: userId })
+      .select("_id")
+      .lean();
+    if (!experiment) {
+      throw new NotFoundError("Experiment not found");
+    }
+    const experimentIds = experiment.map((e) => e._id);
+    
+    const query = {
+      experimentId: { $in: experimentIds },
+    };
+    const escapeRegex = (text) => {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    };
+    if (name && name.trim()) {
+      const safeName = escapeRegex(name.trim());
+      query.name = { $regex: safeName, $options: "i" };
+    }
+    if ((startTime && startTime.trim()) || (endTime && endTime.trim())) {
+      query.time = {};
+      if (startTime && startTime.trim()) {
+        const start = new Date(startTime);
+        if (!isNaN(start)) query.time.$gte = start;
+      }
+      if (endTime && endTime.trim()) {
+        const end = new Date(endTime);
+        if (!isNaN(end)) query.time.$lte = end;
+      }
+    }
+    const skip = (page - 1) * limit;
+    const [measurements, total] = await Promise.all([
+      measurementModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .populate("experimentId")
+        .lean(),
+      measurementModel.countDocuments(query),
+    ]);
+    return {
+      measurements,
+      total,
+      page,
+      limit,
+    }
   }
 }
 module.exports = MeasurementService;

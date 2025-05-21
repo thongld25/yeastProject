@@ -17,8 +17,6 @@ const ImageListTable = ({ tableData, onDelete }) => {
             <th className="px-4 py-3 font-semibold">STT</th>
             <th className="px-4 py-3 font-semibold">Danh sách ảnh</th>
             <th className="px-4 py-3 font-semibold">Tên ảnh</th>
-            <th className="px-4 py-3 font-semibold">Loại ảnh</th>
-            <th className="px-4 py-3 font-semibold">Loại lăng kính</th>
             <th className="px-4 py-3 font-semibold">Trạng thái</th>
             <th className="px-4 py-3 font-semibold text-center">Hành động</th>
           </tr>
@@ -41,14 +39,6 @@ const ImageListTable = ({ tableData, onDelete }) => {
 
                 <td className="px-4 py-3 text-gray-800">{item.name || "—"}</td>
 
-                <td className="px-4 py-3 text-gray-800 font-medium">
-                  {item.imageType}
-                </td>
-
-                <td className="px-4 py-3 text-gray-800 font-medium">
-                  {item.lensType}
-                </td>
-
                 <td className="px-4 py-3">
                   {item.status === "completed" && (
                     <span className="inline-block px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full">
@@ -58,6 +48,11 @@ const ImageListTable = ({ tableData, onDelete }) => {
                   {item.status === "pending" && (
                     <span className="inline-block px-3 py-1 text-sm font-medium bg-yellow-100 text-yellow-800 rounded-full">
                       Đang xử lý
+                    </span>
+                  )}
+                  {item.status === "failed" && (
+                    <span className="inline-block px-3 py-1 text-sm font-medium bg-red-100 text-red-800 rounded-full">
+                      Xử lý thất bại
                     </span>
                   )}
                   {!item.status && (

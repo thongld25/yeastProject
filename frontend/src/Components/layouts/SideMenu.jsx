@@ -31,7 +31,8 @@ const SideMenu = ({ activeMenu }) => {
 
   useEffect(() => {
     if (user) {
-      const menu = user?.role === "admin" ? SIDE_MENU_DATA : SIDE_MENU_USER_DATA;
+      const menu =
+        user?.role === "admin" ? SIDE_MENU_DATA : SIDE_MENU_USER_DATA;
       setSideMenuData(menu);
 
       // Tự mở menu cha nếu activeMenu là một submenu
@@ -82,9 +83,10 @@ const SideMenu = ({ activeMenu }) => {
             }}
           >
             <div className="flex items-center gap-3">
-              <item.icon className="text-xl" />
+              <item.icon className="w-5 h-5" />
               {item.label}
             </div>
+
             {item.children && (
               <span className="text-gray-500">
                 {openMenuId === item.id ? "▾" : "▸"}

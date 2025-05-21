@@ -9,6 +9,12 @@ import {
   LuChartColumnBig,
 } from "react-icons/lu";
 
+import {
+  BeakerIcon,
+  ChartBarIcon,
+  PhotoIcon,
+} from "@heroicons/react/24/outline";
+
 export const SIDE_MENU_DATA = [
   {
     id: "01",
@@ -40,28 +46,35 @@ export const SIDE_MENU_USER_DATA = [
   {
     id: "03",
     label: "Thí nghiệm",
-    icon: LuClipboardCheck,
+    icon: BeakerIcon,
     path: "/employee/experiment",
   },
   {
     id: "04",
+    label: "Lần đo",
+    icon: LuClipboardCheck,
+    path: "/employee/measurement",
+  },
+  { id: "05", label: "Hình ảnh", icon: PhotoIcon, path: "/employee/image" },
+  {
+    id: "06",
     label: "Thống kê",
     icon: LuChartColumnBig,
     children: [
       {
-        id: "04-1",
+        id: "06-1",
         label: "Theo thí nghiệm",
         path: "/employee/statistics/by-experiment",
       },
       {
-        id: "04-2",
+        id: "06-2",
         label: "Theo lần đo",
         path: "/employee/statistics/by-measurement",
       },
     ],
   },
   {
-    id: "05",
+    id: "07",
     label: "Đăng xuất",
     icon: LuLogOut,
     path: "/logout",

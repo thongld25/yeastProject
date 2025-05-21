@@ -7,6 +7,7 @@ import {
   ChartBarIcon,
   PhotoIcon,
 } from "@heroicons/react/24/outline";
+import { LuClipboardCheck } from "react-icons/lu";
 import { countingExperimentOfUser } from "../../services/UserService";
 import { use } from "react";
 
@@ -20,7 +21,7 @@ const EmployeeDashboard = () => {
     try {
       const response = await countingExperimentOfUser();
       console.log(response);
-      if(response.status === 200) {
+      if (response.status === 200) {
         setCountExperiment(response.metadata.experimentCount);
         setCountMeasurement(response.metadata.measurementCount);
         setCountImage(response.metadata.imageCount);
@@ -47,7 +48,7 @@ const EmployeeDashboard = () => {
           title="Tổng số lần đo"
           value={countMeasurement}
           linkText="measurement"
-          icon={<ChartBarIcon className="w-full h-full" />}
+          icon={<LuClipboardCheck className="w-full h-full" />}
         />
 
         <StatsCard

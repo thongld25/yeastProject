@@ -14,7 +14,7 @@ const points = require("../data/mockData.js").points;
 
 class ImageService {
   // add normal image with normal lens
-  static async addNormalImage(measurementId, image, name) {
+  static async addImage(measurementId, image, name) {
     if (!measurementId) throw new BadRequestError("Measurement ID is required");
     if (!image) throw new BadRequestError("Images are required");
     if (!image.mimetype.startsWith("image/")) {
@@ -37,88 +37,6 @@ class ImageService {
       name: name,
       filename: originalFilename,
       originalImage: `/uploads/${originalFilename}`,
-      imageType: "thường",
-      lensType: "thường",
-      measurementId: measurementId,
-      bacteriaData: null,
-      status: "pending",
-    });
-
-    // Thêm job vào hàng đợi xử lý
-    const job = await imageProcessingQueue.add({ imageId: newImage._id });
-    console.log("Job added to queue:", job.id);
-    return {
-      image: newImage,
-      jobId: job.id,
-    };
-  }
-
-  // add methylene image with normal lens
-  static async addMethyleneImage(measurementId, image, name) {
-    if (!measurementId) throw new BadRequestError("Measurement ID is required");
-    if (!image) throw new BadRequestError("Images are required");
-    if (!image.mimetype.startsWith("image/")) {
-      throw new BadRequestError("Uploaded file is not an image");
-    }
-    const measurement = await measurementModel.findById(measurementId);
-    if (!measurement) throw new NotFoundError("Measurement not found");
-
-    // Tải ảnh lên thư mục uploads
-    const uploadDir = path.join(__dirname, "../uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    const originalFilename = `${Date.now()}-${image.originalname}`;
-    const originalPath = path.join(uploadDir, originalFilename);
-    await fs.promises.writeFile(originalPath, image.buffer);
-
-    // Thêm thông tin ảnh vào cơ sở dữ liệu
-    const newImage = await imageModel.create({
-      name: name,
-      filename: originalFilename,
-      originalImage: `/uploads/${originalFilename}`,
-      imageType: "methylene",
-      lensType: "thường",
-      measurementId: measurementId,
-      bacteriaData: null,
-      status: "pending",
-    });
-
-    // Thêm job vào hàng đợi xử lý
-    const job = await imageProcessingQueue.add({ imageId: newImage._id });
-    console.log("Job added to queue:", job.id);
-    return {
-      image: newImage,
-      jobId: job.id,
-    };
-  }
-
-  // add image with counting lens
-  static async addCountingImage(measurementId, image, name) {
-    if (!measurementId) throw new BadRequestError("Measurement ID is required");
-    if (!image) throw new BadRequestError("Images are required");
-    if (!image.mimetype.startsWith("image/")) {
-      throw new BadRequestError("Uploaded file is not an image");
-    }
-    const measurement = await measurementModel.findById(measurementId);
-    if (!measurement) throw new NotFoundError("Measurement not found");
-
-    // Tải ảnh lên thư mục uploads
-    const uploadDir = path.join(__dirname, "../uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    const originalFilename = `${Date.now()}-${image.originalname}`;
-    const originalPath = path.join(uploadDir, originalFilename);
-    await fs.promises.writeFile(originalPath, image.buffer);
-
-    // Thêm thông tin ảnh vào cơ sở dữ liệu
-    const newImage = await imageModel.create({
-      name: name,
-      filename: originalFilename,
-      originalImage: `/uploads/${originalFilename}`,
-      imageType: "thường",
-      lensType: "buồng đếm",
       measurementId: measurementId,
       bacteriaData: null,
       status: "pending",
@@ -135,55 +53,84 @@ class ImageService {
 
   static async processImage(imageId) {
     if (!imageId) throw new BadRequestError("Image ID is required");
+
     const image = await imageModel.findById(imageId);
     if (!image) throw new NotFoundError("Image not found");
-    if (image.status === "pending") {
+
+    const measurement = await measurementModel.findById(image.measurementId);
+    if (!measurement) throw new NotFoundError("Measurement not found");
+
+    if (image.status !== "pending") return image;
+
+    try {
       await new Promise((resolve) => setTimeout(resolve, 15000));
-      if (image.lensType === "thường") {
+
+      if (measurement.lensType === "thường") {
         let bounding_boxes;
-        if (image.imageType === "thường") {
+
+        if (measurement.imageType === "thường") {
           bounding_boxes = cellData.bounding_boxes;
-        } else if (image.imageType === "methylene") {
+        } else if (measurement.imageType === "methylene") {
           bounding_boxes = cellData2;
+        } else {
+          throw new BadRequestError("Unsupported image type");
         }
 
-        const bacteriaData = bounding_boxes.map((bbox) => {
-          return {
-            cell_id: bbox.cell_id,
-            x: bbox.x,
-            y: bbox.y,
-            width: bbox.width,
-            height: bbox.height,
-            type: bbox.type,
-          };
-        });
+        if (!bounding_boxes) {
+          throw new BadRequestError(
+            "Bounding boxes data not found for the given image type"
+          );
+        }
+
+        const bacteriaData = bounding_boxes.map((bbox) => ({
+          cell_id: bbox.cell_id,
+          x: bbox.x,
+          y: bbox.y,
+          width: bbox.width,
+          height: bbox.height,
+          type: bbox.type,
+        }));
+
         image.bacteriaData = bacteriaData;
         image.status = "completed";
         await image.save();
         return image;
-      } else if (image.lensType === "buồng đếm") {
-        let bounding_boxes = cellData3;
-        const bacteriaData = bounding_boxes.map((bbox) => {
-          return {
-            cell_id: bbox.cell_id,
-            x: bbox.x,
-            y: bbox.y,
-            width: bbox.width,
-            height: bbox.height,
-          };
-        });
-        image.points = points;
+      } else if (measurement.lensType === "buồng đếm") {
+        const bounding_boxes = cellData3;
+
+        if (!bounding_boxes) {
+          throw new BadRequestError(
+            "Bounding boxes data not found for counting chamber"
+          );
+        }
+
+        const bacteriaData = bounding_boxes.map((bbox) => ({
+          cell_id: bbox.cell_id,
+          x: bbox.x,
+          y: bbox.y,
+          width: bbox.width,
+          height: bbox.height,
+        }));
+
+        // ⚠️ Đảm bảo biến points phải có giá trị phù hợp nếu dùng
+        image.points = points || []; // hoặc xóa dòng này nếu không cần
         image.bacteriaData = bacteriaData;
         image.status = "completed";
         await image.save();
         return image;
       }
+
+      throw new BadRequestError("Unsupported lens type");
+    } catch (error) {
+      image.status = "failed";
+      await image.save();
+      throw error; // để log hoặc xử lý tiếp ở middleware gọi hàm này
     }
   }
 
   static async getImageById(imageId) {
     if (!imageId) throw new BadRequestError("Image ID is required");
-    const image = await imageModel.findById(imageId);
+    const image = await imageModel.findById(imageId).populate("measurementId").lean();
     if (!image) throw new NotFoundError("Image not found");
     return image;
   }

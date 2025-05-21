@@ -4,42 +4,14 @@ const { SuccessResponse } = require("../core/success.response");
 const ImageService = require("../services/image.service");
 
 class ImageController {
-  addNormalImageByMeasurementId = async (req, res, next) => {
+  addImageByMeasurementId = async (req, res, next) => {
     try {
       const { measurementId } = req.params;
       const {name} = req.body;
       const image = req.file;
       new SuccessResponse({
         message: "Add image success!",
-        metadata: await ImageService.addNormalImage(measurementId, image, name),
-      }).send(res);
-    } catch (err) {
-      next(err);
-    }
-  };
-
-  addMethyleneImageByMeasurementId = async (req, res, next) => {
-    try {
-      const { measurementId } = req.params;
-      const {name} = req.body;
-      const image = req.file;
-      new SuccessResponse({
-        message: "Add image success!",
-        metadata: await ImageService.addMethyleneImage(measurementId, image, name),
-      }).send(res);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  addCountingImageByMeasurementId = async (req, res, next) => {
-    try {
-      const { measurementId } = req.params;
-      const {name} = req.body;
-      const image = req.file;
-      new SuccessResponse({
-        message: "Add image success!",
-        metadata: await ImageService.addCountingImage(measurementId, image, name),
+        metadata: await ImageService.addImage(measurementId, image, name),
       }).send(res);
     } catch (err) {
       next(err);

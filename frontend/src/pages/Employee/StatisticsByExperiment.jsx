@@ -16,7 +16,7 @@ import {
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import nunitoSansBase64 from "../../utils/nunito-sans-base64";
-import { getExperimentsOfEmployee } from "../../services/ExperimentService";
+import { getExperimentByUserId, getExperimentsOfEmployee } from "../../services/ExperimentService";
 import { useSearchParams } from "react-router-dom";
 
 const COLORS = {
@@ -30,14 +30,13 @@ const COLORS = {
 
 const PDF_TABLE_HEADERS = [
   "Tên lần đo",
-  "Normal",
-  "Abnormal",
-  "Normal 2x",
-  "Abnormal 2x",
+  "Tế bào bình thường",
+  "Tế bào bất thường",
+  "Tế bào nảy chồi bình thường",
+  "Tế bào nảy chồi bất thường",
   "Tế bào sống",
   "Tế bào chết",
-  "% Sống",
-  "% Chết",
+  "Tổng số tế bào",
 ];
 
 const StatisticsByExperiment = () => {
@@ -63,7 +62,7 @@ const StatisticsByExperiment = () => {
   useEffect(() => {
     const fetchExperiments = async () => {
       try {
-        const res = await getExperimentsOfEmployee(); // bạn cần tạo hàm API này
+        const res = await getExperimentByUserId(); // bạn cần tạo hàm API này
         console.log(res);
         setExperiments(res.metadata);
       } catch (error) {
@@ -92,8 +91,6 @@ const StatisticsByExperiment = () => {
           return {
             ...item,
             total,
-            ratio_alive: total ? ((item.alive / total) * 100).toFixed(1) : "0",
-            ratio_dead: total ? ((item.dead / total) * 100).toFixed(1) : "0",
           };
         });
 
@@ -265,31 +262,28 @@ const StatisticsByExperiment = () => {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-gray-800 border-b font-semibold">
-                        {item.name}
+                        {item.name} 
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.normal}
+                        {item.normal} ({((item.normal / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.abnormal}
+                        {item.abnormal} ({((item.abnormal / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.normal_2x}
+                        {item.normal_2x} ({((item.normal_2x / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.abnormal_2x}
+                        {item.abnormal_2x} ({((item.abnormal_2x / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b text-green-600 font-semibold">
-                        {item.alive}
+                        {item.alive} ({((item.alive / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b text-red-600 font-semibold">
-                        {item.dead}
+                        {item.dead} ({((item.dead / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-bold">
-                        {item.ratio_alive}%
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-bold">
-                        {item.ratio_dead}%
+                        {item.total} (100%)
                       </td>
                     </tr>
                   ))}

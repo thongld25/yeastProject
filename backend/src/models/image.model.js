@@ -16,8 +16,6 @@ const ImageSchema = new mongoose.Schema({
   maskImage: {
     type: String,
   },
-  imageType: String,
-  lensType: String,
   status: {
     type: String,
     enum: ["pending", "completed", "failed"],

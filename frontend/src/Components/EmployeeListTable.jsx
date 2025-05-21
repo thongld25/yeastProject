@@ -4,8 +4,8 @@ import moment from "moment";
 
 const EmployeeListTable = ({ tableData, onEdit, onDelete }) => {
   return (
-    <div className="overflow-x-auto mt-4">
-      <table className="min-w-full text-[15px] text-left">
+    <div className="overflow-x-auto mt-4 rounded-lg border border-gray-200">
+      <table className="min-w-full text-[15px] text-left bg-white rounded-lg overflow-hidden">
         <thead className="bg-gray-50 text-gray-800">
           <tr>
             <th className="px-4 py-3 font-medium">Họ tên</th>

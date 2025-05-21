@@ -18,6 +18,8 @@ router.get(
   "/experiment/:experimentId",
   asyncHandler(MeasurementController.getMeasurementByExperimentId)
 );
+router.get("/employee", asyncHandler(MeasurementController.getMeasurementOfUser))
+router.get("/employee/search", asyncHandler(MeasurementController.searchMeasurementOfEmployee))
 router.get(
   "/images/:measurementId",
   asyncHandler(MeasurementController.getImagesByMeasurementId)

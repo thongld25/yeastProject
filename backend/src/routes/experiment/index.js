@@ -13,7 +13,11 @@ router.use(authentication);
 router.post("/add", asyncHandler(experimentController.createExperiment));
 router.get(
   "/employee",
-  asyncHandler(experimentController.getExperimentByUserId)
+  asyncHandler(experimentController.getExperimentByUserIdPage)
+);
+router.get(
+  "/user/all",
+  asyncHandler(experimentController.getExperimentOfUser)
 );
 router.get(
   "/factory",
@@ -28,7 +32,11 @@ router.put(
   asyncHandler(experimentController.updateExperiment)
 );
 router.get(
-  "/:experimentId",
+  "/search",
+  asyncHandler(experimentController.searchExperimentOfEmployee)
+);
+router.get(
+  "/experiment/:experimentId",
   asyncHandler(experimentController.getExperimentById)
 );
 

@@ -50,6 +50,7 @@ class StatisticsService {
       time: measurement.time,
       statictis: statsByImage,
       measurementName: measurement.name,
+      imageType: measurement.imageType,
       experimentName: experiment.title,
     };
   }

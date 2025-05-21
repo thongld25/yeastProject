@@ -6,13 +6,15 @@ const imageProcessingQueue = require("../queue");
 
 class MeasurementController {
   createMeasurement = async (req, res, next) => {
-    const { name, experimentId, time } = req.body;
+    const { name, experimentId, time, imageType, lensType } = req.body;
     new SuccessResponse({
       message: "Create user success!",
       metadata: await MeasurementService.createMeasurement(
         name,
         experimentId,
-        time
+        time,
+        imageType,
+        lensType
       ),
     }).send(res);
   };
@@ -135,6 +137,34 @@ class MeasurementController {
       metadata: await MeasurementService.getMeasurementById(measurementId),
     }).send(res);
   };
+
+  getMeasurementOfUser = async (req, res, next) => {
+    const userId = req.user.userId;
+    const { page, limit } = req.query;
+    new SuccessResponse({
+      message: "Get measurement of user success!",
+      metadata: await MeasurementService.getMeasurementOfUser(userId, {
+        page,
+        limit,
+      }),
+    }).send(res);
+  };
+
+  searchMeasurementOfEmployee = async (req, res, next) => {
+      const { name, startTime, endTime, page = 1, limit = 10 } = req.query;
+      const userId = req.user.userId;
+      new SuccessResponse({
+        message: "Search measurement success!",
+        metadata: await MeasurementService.searchMeasurements({
+          userId,
+          name,
+          startTime,
+          endTime,
+          page: parseInt(page) || 1,
+          limit: parseInt(limit) || 10,
+        }),
+      }).send(res);
+    };
 }
 
 module.exports = new MeasurementController();

@@ -13,8 +13,6 @@ import { useUserAuth } from "../../hooks/useUserAuth";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  addCountingImage,
-  addMethyleneImage,
   deleteImage,
   getImagesOfMeasurement,
 } from "../../services/ImageService";
@@ -34,13 +32,10 @@ const ListImages = () => {
   const { measurementId } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    imageType: "",
-    lensType: "",
     images: [],
   });
   const [experimentName, setExperimentName] = useState("");
   const [measurementName, setMeasurementName] = useState("");
-
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const imagesArray = files.map((file) => ({
@@ -65,6 +60,7 @@ const ListImages = () => {
   const fetchMeasurementDetails = async () => {
     try {
       const res = await getMeasurementById(measurementId);
+      console.log("res", res);
       if (res.status === 200) {
         setMeasurementName(res.metadata.name);
         setExperimentName(res.metadata.experimentId?.title || "");
@@ -111,21 +107,7 @@ const ListImages = () => {
 
     try {
       for (const image of selectedImages) {
-        let res;
-
-        if (formData.imageType === "thường" && formData.lensType === "thường") {
-          res = await addImage(measurementId, image.file, image.name);
-        } else if (
-          formData.imageType === "methylene" &&
-          formData.lensType === "thường"
-        ) {
-          res = await addMethyleneImage(measurementId, image.file, image.name);
-        } else if (
-          formData.imageType === "thường" &&
-          formData.lensType === "buồng đếm"
-        ) {
-          res = await addCountingImage(measurementId, image.file, image.name);
-        }
+        const res = await addImage(measurementId, image.file, image.name);
 
         if (
           res?.status === 200 &&
@@ -190,40 +172,6 @@ const ListImages = () => {
                 <DialogPanel className="w-full max-w-2xl rounded-xl bg-white p-8 shadow-2xl">
                   <form onSubmit={handleSubmit}>
                     <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Loại ảnh
-                        </label>
-                        <select
-                          id="imageType"
-                          value={formData.imageType}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        >
-                          <option value="">-- Chọn loại ảnh --</option>
-                          <option value="thường">Ảnh bình thường</option>
-                          <option value="methylene">
-                            Ảnh chụp xanh methylene
-                          </option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Loại lăng kính
-                        </label>
-                        <select
-                          id="lensType"
-                          value={formData.lensType}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        >
-                          <option value="">-- Chọn loại lăng kính --</option>
-                          <option value="thường">Lăng kính bình thường</option>
-                          <option value="buồng đếm">Lăng kính buồng đếm</option>
-                        </select>
-                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Tải hình ảnh lên

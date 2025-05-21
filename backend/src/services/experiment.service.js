@@ -6,6 +6,7 @@ const experimentModel = require("../models/experiment.model");
 const UserService = require("./user.service");
 const imageModel = require("../models/image.model");
 const measurementModel = require("../models/measurement.model");
+const userModel = require("../models/user.model");
 
 class ExperimentService {
   static createExperiment = async ({ title, description, userId, time }) => {
@@ -22,12 +23,38 @@ class ExperimentService {
     return newExperiment;
   };
 
+  static findByUserIdPage = async (userId, { page = 1, limit = 10 }) => {
+    const foundUser = await UserService.findById(userId);
+    if (!foundUser) throw new NotFoundError("User not found");
+
+    const skip = (page - 1) * limit;
+
+    const [experiments, total] = await Promise.all([
+      experimentModel
+        .find({ userId })
+        .skip(skip)
+        .limit(limit)
+        .sort({ time: 1 })
+        .lean(),
+      experimentModel.countDocuments({ userId }),
+    ]);
+
+    return {
+      experiments,
+      total,
+      page,
+      limit,
+    };
+  };
+
   static findByUserId = async (userId) => {
     const foundUser = await UserService.findById(userId);
     if (!foundUser) throw new NotFoundError("User not found");
     const experiments = await experimentModel
-      .find({ userId, factoryId: foundUser.factoryId })
+      .find({ userId })
+      .sort({ time: 1 })
       .lean();
+    if (!experiments) throw new NotFoundError("Experiments not found");
     return experiments;
   };
 
@@ -98,6 +125,62 @@ class ExperimentService {
       .lean();
     if (!updatedExperiment) throw new NotFoundError("Experiment not found");
     return updatedExperiment;
+  };
+
+  static searchExperiments = async ({
+    userId,
+    title,
+    startTime,
+    endTime,
+    page = 1,
+    limit = 10,
+  }) => {
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) throw new NotFoundError("User not found");
+
+    const query = {
+      userId,
+    };
+    const escapeRegex = (text) => {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    };
+    if (title && title.trim()) {
+      const safeTitle = escapeRegex(title.trim());
+      query.title = { $regex: safeTitle, $options: "i" };
+    }
+
+    if ((startTime && startTime.trim()) || (endTime && endTime.trim())) {
+      query.time = {};
+      if (startTime && startTime.trim()) {
+        const start = new Date(startTime);
+        if (!isNaN(start)) query.time.$gte = start;
+      }
+      if (endTime && endTime.trim()) {
+        const end = new Date(endTime);
+        if (!isNaN(end)) query.time.$lte = end;
+      }
+    }
+
+    const skip = (page - 1) * limit;
+    console.log("▶ Final Mongo Query:", JSON.stringify(query, null, 2));
+    console.log("⏰ start:", startTime, "→", new Date(startTime));
+    console.log("⏰ end:", endTime, "→", new Date(endTime));
+
+    const [experiments, total] = await Promise.all([
+      experimentModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ time: 1 })
+        .lean(),
+      experimentModel.countDocuments(query),
+    ]);
+    return {
+      experiments,
+      total,
+      page,
+      limit,
+    };
   };
 }
 

@@ -13,8 +13,11 @@ import { getStatictisOfMeasurement } from "../../services/StatictisService";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import nunitoSansBase64 from "../../utils/nunito-sans-base64";
-import { getExperimentsOfEmployee } from "../../services/ExperimentService";
-import { getMeasurementByExperimentId, getMeasurementById } from "../../services/MeasurementService";
+import { getExperimentByUserId, getExperimentsOfEmployee } from "../../services/ExperimentService";
+import {
+  getMeasurementByExperimentId,
+  getMeasurementById,
+} from "../../services/MeasurementService";
 import { useSearchParams } from "react-router-dom";
 
 const COLORS = {
@@ -46,6 +49,7 @@ const StatisticsByMeasurement = () => {
   const [time, setTime] = useState("");
   const [experimentName, setExperimentName] = useState("");
   const [measurementName, setMeasurementName] = useState("");
+  const [imageType, setImageType] = useState("");
   const chartRef = useRef();
   const tableRef = useRef();
   const [experiments, setExperiments] = useState([]);
@@ -59,7 +63,7 @@ const StatisticsByMeasurement = () => {
   useEffect(() => {
     const fetchExperiments = async () => {
       try {
-        const res = await getExperimentsOfEmployee(); // bạn cần tạo hàm API này
+        const res = await getExperimentByUserId(); // bạn cần tạo hàm API này
         console.log(res);
         setExperiments(res.metadata);
       } catch (error) {
@@ -69,27 +73,26 @@ const StatisticsByMeasurement = () => {
     fetchExperiments();
   }, []);
 
-useEffect(() => {
-  const measurementIdFromURL = searchParams.get("measurementId");
-  if (!measurementIdFromURL) return;
+  useEffect(() => {
+    const measurementIdFromURL = searchParams.get("measurementId");
+    if (!measurementIdFromURL) return;
 
-  const initSelected = async () => {
-    try {
-      const res = await getMeasurementById(measurementIdFromURL);
-      if (res.status === 200) {
-        const measurement = res.metadata;
-        console.log(measurement);
-        setSelectedExperimentId(measurement.experimentId._id); // điền thí nghiệm
-        setSelectedMeasurementId(measurement._id); // điền lần đo
+    const initSelected = async () => {
+      try {
+        const res = await getMeasurementById(measurementIdFromURL);
+        if (res.status === 200) {
+          const measurement = res.metadata;
+          console.log(measurement);
+          setSelectedExperimentId(measurement.experimentId._id); // điền thí nghiệm
+          setSelectedMeasurementId(measurement._id); // điền lần đo
+        }
+      } catch (error) {
+        console.error("Không thể khởi tạo dữ liệu từ URL", error);
       }
-    } catch (error) {
-      console.error("Không thể khởi tạo dữ liệu từ URL", error);
-    }
-  };
+    };
 
-  initSelected();
-}, []);
-
+    initSelected();
+  }, []);
 
   useEffect(() => {
     const fetchMeasurements = async () => {
@@ -111,18 +114,31 @@ useEffect(() => {
       setLoading(true);
       try {
         const res = await getStatictisOfMeasurement(selectedMeasurementId); // truyền ID lần đo
-        const { name, email, time, experimentName, measurementName } =
-          res.metadata;
+        const {
+          name,
+          email,
+          time,
+          experimentName,
+          measurementName,
+          imageType,
+          statictis,
+        } = res.metadata;
         setName(name);
         setEmail(email);
         setTime(new Date(time).toLocaleString());
         setExperimentName(experimentName);
         setMeasurementName(measurementName);
+        setImageType(imageType);
+        console.log(statictis);
 
-        const enrichedData = res.metadata.statictis.map((item) => {
-          const total = Object.values(item)
-            .slice(1)
-            .reduce((a, b) => a + b, 0);
+        const enrichedData = statictis.map((item) => {
+          let total;
+          if (imageType === "methylene") {
+            total = item.alive + item.dead;
+          } else {
+            total =
+              item.normal + item.abnormal + item.normal_2x + item.abnormal_2x;
+          }
           return {
             ...item,
             total,
@@ -300,48 +316,73 @@ useEffect(() => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    {PDF_TABLE_HEADERS.map((header, idx) => (
-                      <th
-                        key={idx}
-                        className="px-4 py-3 text-sm font-bold text-gray-700 text-center border-b"
-                      >
-                        {header}
-                      </th>
-                    ))}
+                    <th className="px-4 py-2 text-left font-medium">Tên ảnh</th>
+                    {imageType === "methylene" ? (
+                      <>
+                        <th className="px-4 py-2 text-center font-medium">
+                          Tế bào sống
+                        </th>
+                        <th className="px-4 py-2 text-center font-medium">
+                          Tế bào chết
+                        </th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-4 py-2 text-center font-medium">
+                          Tế bào bình thường
+                        </th>
+                        <th className="px-4 py-2 text-center font-medium">
+                          Tế bào bất thường
+                        </th>
+                        <th className="px-4 py-2 text-center font-medium">
+                          Tế bào nảy chồi bình thường
+                        </th>
+                        <th className="px-4 py-2 text-center font-medium">
+                          Tế bào nảy chồi bất thường
+                        </th>
+                      </>
+                    )}
+                    <th className="px-4 py-2 text-center font-medium">Tổng</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {data.map((item, idx) => (
-                    <tr
-                      key={idx}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-800 border-b font-semibold">
-                        {item.name}
+                  {data.map((row, idx) => (
+                    <tr key={idx}>
+                      <td className="px-4 py-2 font-medium whitespace-nowrap">
+                        {row.name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.normal}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.abnormal}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.normal_2x}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.abnormal_2x}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b text-green-600 font-semibold">
-                        {item.alive}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b text-red-600 font-semibold">
-                        {item.dead}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-bold">
-                        {item.ratio_alive}%
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-bold">
-                        {item.ratio_dead}%
+                      {imageType === "methylene" ? (
+                        <>
+                          <td className="px-4 py-2 text-center">
+                            {row.alive} (
+                            {((row.alive / row.total) * 100).toFixed(2)})
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {row.dead}({((row.dead / row.total) * 100). toFixed(2)})
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2 text-center">
+                            {row.normal}(
+                            {((row.normal / row.total) * 100).toFixed(2)}%)
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {row.abnormal} (
+                            {((row.abnormal / row.total) * 100).toFixed(2)}%)
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {row.normal_2x} (
+                            {((row.normal_2x / row.total) * 100).toFixed(2)}%)
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {row.abnormal_2x} (
+                            {((row.abnormal_2x / row.total) * 100).toFixed(2)}%)
+                          </td>
+                        </>
+                      )}
+                      <td className="px-4 py-2 text-center font-semibold">
+                        {row.total} (100%)
                       </td>
                     </tr>
                   ))}

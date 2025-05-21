@@ -1,5 +1,5 @@
 // AnalysisImage.jsx
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import DashbroardLayout from "../../components/layouts/DashbroardLayout";
 import { useUserAuth } from "../../hooks/useUserAuth";
 import { UserContext } from "../../context/userContext";
@@ -18,20 +18,139 @@ const AnalysisImage = () => {
 
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const pollingIntervalRef = React.useRef(null);
+  const pollingIntervalRef = useRef(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
   const [cellStats, setCellStats] = useState(null);
   const [showSquares, setShowSquares] = useState(true);
+  const [measurement, setMeasurement] = useState(null);
+  // const [hasFailed, setHasFailed] = useState(false);
+  // const [hasError, setHasError] = useState(false);
 
-  const fetchImage = async () => {
+  // const handleFailedImage = async (img) => {
+  //   if (pollingIntervalRef.current) {
+  //     clearInterval(pollingIntervalRef.current);
+  //     pollingIntervalRef.current = null;
+  //   }
+  //   setHasFailed(true);
+  //   toast.error("Phân tích ảnh thất bại");
+
+  //   if (jobId) {
+  //     try {
+  //       await getJobStatus(jobId);
+  //     } catch (err) {
+  //       console.error("Gọi job status lần cuối thất bại:", err);
+  //     }
+  //   }
+
+  //   if (img.measurementId) {
+  //     window.location.href = `/images/${img.measurementId._id}`;
+  //   }
+  // };
+  // const fetchImage = async () => {
+  //   try {
+  //     const res = await getImagesById(imageId);
+  //     console.log("Image data:", res);
+  //     if (res.status === 200 && res.metadata) {
+  //       const img = res.metadata;
+  //       setMeasurement(img.measurementId);
+  //       setImage(img);
+
+  //       if (img.status === "failed") {
+  //         await handleFailedImage(img);
+  //         return;
+  //       }
+
+  //       if (img.status === "completed") {
+  //         await processImageStats(img);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Fetch image error:", error);
+  //     toast.error("Không lấy được thông tin ảnh");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // const processImageStats = async (img) => {
+  //   try {
+  //     let stats;
+  //     if (measurement.imageType === "methylene") {
+  //       stats = { alive: 0, dead: 0 };
+  //       img.bacteriaData?.forEach((cell) => {
+  //         if (cell.type === "alive") stats.alive++;
+  //         else if (cell.type === "dead") stats.dead++;
+  //       });
+  //     } else {
+  //       stats = {
+  //         normal: 0,
+  //         abnormal: 0,
+  //         normal_2x: 0,
+  //         abnormal_2x: 0,
+  //       };
+  //       img.bacteriaData?.forEach((cell) => {
+  //         if (cell.type && stats.hasOwnProperty(cell.type)) {
+  //           stats[cell.type]++;
+  //         }
+  //       });
+  //     }
+  //     setCellStats(stats);
+  //   } catch (error) {
+  //     console.error("Error processing stats:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const fetchAndPoll = async () => {
+  //     await fetchImage();
+
+  //     if (jobId) {
+  //       pollingIntervalRef.current = setInterval(async () => {
+  //         try {
+  //           const jobRes = await getJobStatus(jobId);
+
+  //           if (jobRes.status === "completed") {
+  //             clearInterval(pollingIntervalRef.current);
+  //             pollingIntervalRef.current = null;
+  //             await fetchImage();
+  //           } else if (jobRes.status === "failed") {
+  //             clearInterval(pollingIntervalRef.current);
+  //             pollingIntervalRef.current = null;
+  //             await fetchImage();
+  //           } else if (jobRes.status === "waiting") {
+  //             toast.loading("Đang chờ phân tích ảnh...");
+  //           } else if (jobRes.status !== "active") {
+  //             clearInterval(pollingIntervalRef.current);
+  //             pollingIntervalRef.current = null;
+  //             toast.error("Trạng thái phân tích không xác định");
+  //           }
+  //         } catch (err) {
+  //           console.error("Polling job status error:", err);
+  //           if (pollingIntervalRef.current) {
+  //             clearInterval(pollingIntervalRef.current);
+  //             pollingIntervalRef.current = null;
+  //           }
+  //           if (!hasError) {
+  //             setHasError(true);
+  //             toast.error("Lỗi khi kiểm tra trạng thái phân tích");
+  //           }
+  //         }
+  //       }, 5000);
+  //     }
+  //   };
+
+  //   fetchAndPoll();
+
+    const fetchImage = async () => {
     try {
       const res = await getImagesById(imageId);
       console.log("Fetched image data:", res);
       if (res.status === 200 && res.metadata) {
         const img = res.metadata;
-
         setImage(img);
+        setMeasurement(img.measurementId);
+        const meas = img.measurementId;
 
         if (img.status === "pending" && jobId) {
           const intervalId = setInterval(async () => {
@@ -57,7 +176,7 @@ const AnalysisImage = () => {
 
         if (img.status === "completed") {
           let stats;
-          if (img.imageType === "methylene") {
+          if (meas.imageType === "methylene") {
             stats = { alive: 0, dead: 0 };
             img.bacteriaData?.forEach((cell) => {
               if (cell.type === "alive") stats.alive++;
@@ -155,7 +274,7 @@ const AnalysisImage = () => {
               <BacteriaImage
                 imagePath={`http://localhost:3055${image.originalImage}`}
                 bacteriaData={image.bacteriaData}
-                lensType={image.lensType}
+                lensType={measurement.lensType}
                 points={image.points}
                 showSquares={showSquares}
               />
@@ -163,7 +282,7 @@ const AnalysisImage = () => {
           )}
         </div>
 
-        {image?.imageType !== "methylene" && image?.maskImage && (
+        {measurement?.imageType !== "methylene" && image?.maskImage && (
           <div>
             <h2 className="text-lg font-semibold mb-2">Ảnh mask</h2>
             <img
@@ -179,16 +298,16 @@ const AnalysisImage = () => {
           </div>
         )}
       </div>
-      {image?.lensType === "buồng đếm" && (
-          <div className="my-4">
-            <button
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-              onClick={() => setShowSquares((prev) => !prev)}
-            >
-              {showSquares ? "Ẩn 16 ô vuông" : "Hiện 16 ô vuông"}
-            </button>
-          </div>
-        )}
+      {measurement?.lensType === "buồng đếm" && (
+        <div className="my-4">
+          <button
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            onClick={() => setShowSquares((prev) => !prev)}
+          >
+            {showSquares ? "Ẩn 16 ô vuông" : "Hiện 16 ô vuông"}
+          </button>
+        </div>
+      )}
 
       {modalOpen && (
         <div
@@ -204,7 +323,7 @@ const AnalysisImage = () => {
                 <BacteriaImage
                   imagePath={`http://localhost:3055${image.originalImage}`}
                   bacteriaData={image.bacteriaData}
-                  lensType={image.lensType}
+                  lensType={measurement.lensType}
                   points={image.points}
                   showSquares={showSquares}
                   onCellClick={(cell) => setSelectedCell(cell)}
@@ -284,7 +403,7 @@ const AnalysisImage = () => {
             Phân tích <span className="float-right">Số lượng</span>
           </h3>
           <div className="space-y-2">
-            {image?.imageType === "methylene" ? (
+            {measurement?.imageType === "methylene" ? (
               <>
                 <div className="flex justify-between">
                   <span>Tế bào sống:</span>
@@ -319,7 +438,7 @@ const AnalysisImage = () => {
         </div>
       )}
 
-      {image?.imageType === "methylene" ? (
+      {measurement?.imageType === "methylene" ? (
         <div className="mt-4 flex flex-wrap gap-4">
           <LegendBox color="green" label="Tế bào sống" />
           <LegendBox color="red" label="Tế bào chết" />

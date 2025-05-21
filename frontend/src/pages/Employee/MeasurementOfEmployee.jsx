@@ -15,19 +15,23 @@ import {
   createMeasurement,
   deleteMeasurement,
   getMeasurementByExperimentId,
+  getMeasurementOfUser,
+  searchMeasurementOfEmployee,
   updateMeasurement,
 } from "../../services/MeasurementService";
-import { useParams } from "react-router-dom";
-import { getExperimentById } from "../../services/ExperimentService";
+import {
+  getExperimentById,
+  getExperimentByUserId,
+} from "../../services/ExperimentService";
 
-const Measurement = () => {
+const MeasurementOfEmployee = () => {
   useUserAuth();
   const { user } = useContext(UserContext);
   const [open, setOpen] = useState(false);
   const [measurements, setMeasurements] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { experimentId } = useParams();
   const [formData, setFormData] = useState({
+    experimentId: "",
     imageType: "",
     lensType: "",
     name: "",
@@ -35,7 +39,13 @@ const Measurement = () => {
   });
   const [editOpen, setEditOpen] = useState(false);
   const [editingMeasurement, setEditingMeasurement] = useState(null);
-  const [experimentTitle, setExperimentTitle] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 5; // số thí nghiệm mỗi trang
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [experiments, setExperiments] = useState([]);
 
   const handleOpenEdit = (item) => {
     setEditingMeasurement(item);
@@ -52,7 +62,7 @@ const Measurement = () => {
       const res = await updateMeasurement(editingMeasurement._id, editData);
       if (res.status === 200) {
         toast.success("Cập nhật lần đo thành công!");
-        fetchMeasurements();
+        fetchMeasurementsOfEmployee();
         setEditOpen(false);
       } else {
         toast.error("Cập nhật thất bại!");
@@ -63,17 +73,6 @@ const Measurement = () => {
     }
   };
 
-  const fetchExperiment = async () => {
-    try {
-      const res = await getExperimentById(experimentId);
-      if (res.status === 200) {
-        setExperimentTitle(res.metadata.title);
-      }
-    } catch {
-      toast.error("Không lấy được thông tin thí nghiệm");
-    }
-  };
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -81,15 +80,74 @@ const Measurement = () => {
     });
   };
 
-  const fetchMeasurements = async () => {
+  function getPagination(currentPage, totalPages) {
+    const pages = [];
+
+    // Luôn có trang đầu
+    pages.push(1);
+
+    // Chèn ... nếu currentPage > 3
+    if (currentPage > 3) {
+      pages.push("...");
+    }
+
+    // Hiển thị currentPage và currentPage + 1 (nếu trong phạm vi)
+    if (currentPage > 1 && currentPage < totalPages) {
+      pages.push(currentPage);
+      if (currentPage + 1 < totalPages) {
+        pages.push(currentPage + 1);
+      }
+    } else if (currentPage === 1 && totalPages > 1) {
+      pages.push(2);
+    }
+
+    // Chèn ... nếu currentPage < totalPages - 2
+    if (currentPage < totalPages - 2) {
+      pages.push("...");
+    }
+
+    // Luôn có trang cuối (khác trang đầu)
+    if (totalPages !== 1) {
+      pages.push(totalPages);
+    }
+
+    return pages;
+  }
+
+  const fetchMeasurementsOfEmployee = async (page = 1) => {
     try {
-      const res = await getMeasurementByExperimentId(experimentId);
+      let res;
+      if (searchKeyword.trim() || startTime || endTime) {
+        res = await searchMeasurementOfEmployee(
+          searchKeyword,
+          startTime,
+          endTime,
+          page,
+          limit
+        );
+      } else {
+        res = await getMeasurementOfUser(page, limit);
+      }
       console.log("res", res);
       if (res.status === 200) {
-        setMeasurements(res.metadata);
+        setMeasurements(res.metadata.measurements);
+        setTotal(res.metadata.total);
+        setCurrentPage(page);
       }
     } catch (error) {
       toast.error("Lấy dữ liệu lần đo thất bại");
+    }
+  };
+
+  const fetchExperimentsOfUser = async () => {
+    try {
+      const res = await getExperimentByUserId(); // cần trả về mảng thí nghiệm [{ _id, title }]
+      console.log("res", res);
+      if (res.status === 200) {
+        setExperiments(res.metadata); // metadata là mảng
+      }
+    } catch (error) {
+      toast.error("Không lấy được danh sách thí nghiệm");
     }
   };
 
@@ -102,7 +160,7 @@ const Measurement = () => {
         const res = await deleteMeasurement(measurementId);
         if (res.status === 200) {
           toast.success("Xóa lần đo thành công!");
-          fetchMeasurements();
+          fetchMeasurementsOfEmployee();
         }
       } catch (error) {
         toast.error("Xóa lần đo thất bại");
@@ -117,6 +175,7 @@ const Measurement = () => {
       const name = formData.name;
       const imageType = formData.imageType;
       const lensType = formData.lensType;
+      const experimentId = formData.experimentId;
       const time = new Date(formData.time).toISOString();
       const res = await createMeasurement(
         name,
@@ -129,7 +188,7 @@ const Measurement = () => {
         toast.success("Tạo lần đo thành công!");
         setFormData({ name: "", imageType: "", lensType: "", time: "" });
         setOpen(false);
-        fetchMeasurements();
+        fetchMeasurementsOfEmployee();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Creation failed");
@@ -139,19 +198,17 @@ const Measurement = () => {
   };
 
   useEffect(() => {
-    fetchMeasurements();
-    fetchExperiment();
+    fetchMeasurementsOfEmployee();
+    fetchExperimentsOfUser();
   }, []);
 
   return (
-    <DashbroardLayout activeMenu="Thí nghiệm">
+    <DashbroardLayout activeMenu="Lần đo">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4 md:my-6">
         <div className="md:col-span-2">
           <div className="card">
             <div className="flex items-center justify-between">
               <h5 className="text-lg font-medium flex items-center gap-2 text-gray-700">
-                <span>{experimentTitle}</span>
-                <span className="text-gray-400">/</span>
                 <span className="text-gray-700 font-medium">Các lần đo</span>
               </h5>
               <button
@@ -177,6 +234,26 @@ const Measurement = () => {
                   </DialogTitle>
 
                   <form onSubmit={handleSubmit}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Thí nghiệm
+                      </label>
+                      <select
+                        id="experimentId"
+                        value={formData.experimentId}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">-- Chọn thí nghiệm --</option>
+                        {experiments.map((exp) => (
+                          <option key={exp._id} value={exp._id}>
+                            {exp.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -290,6 +367,23 @@ const Measurement = () => {
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tên thí nghiệm
+                        </label>
+                        <input
+                          type="text"
+                          value={editingMeasurement.experimentId.title || ""}
+                          onChange={(e) =>
+                            setEditingMeasurement({
+                              ...editingMeasurement,
+                              name: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border rounded bg-gray-100 cursor-not-allowed text-gray-500"
+                          disabled
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Tên lần đo
                         </label>
                         <input
@@ -371,12 +465,79 @@ const Measurement = () => {
                 </DialogPanel>
               </div>
             </Dialog>
+            <div className="flex flex-wrap gap-4 items-end mb-4">
+              <div>
+                <label className="block text-sm text-gray-700 font-medium mb-1">
+                  Tên
+                </label>
+                <input
+                  type="text"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  placeholder="Nhập từ khóa..."
+                  className="px-3 py-2 border rounded w-48"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 font-medium mb-1">
+                  Từ ngày
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="px-3 py-2 border rounded"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 font-medium mb-1">
+                  Đến ngày
+                </label>
+                <input
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="px-3 py-2 border rounded"
+                />
+              </div>
+
+              <button
+                onClick={() => fetchMeasurementsOfEmployee(1)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Tìm kiếm
+              </button>
+            </div>
 
             <MeasurementListTable
               tableData={measurements}
               onDelete={handleDeleteMeasurement}
               onEdit={handleOpenEdit}
             />
+            <div className="flex justify-end mt-4 space-x-2">
+              {getPagination(currentPage, Math.ceil(total / limit)).map(
+                (page, i) =>
+                  page === "..." ? (
+                    <span key={i} className="px-3 py-1 text-gray-400">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={() => fetchMeasurementsOfEmployee(page)}
+                      className={`px-3 py-1 border rounded ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -384,4 +545,4 @@ const Measurement = () => {
   );
 };
 
-export default Measurement;
+export default MeasurementOfEmployee;

@@ -17,6 +17,7 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
     }
     navigate(`/images/${measurementId}`);
   };
+  const hasExperiment = tableData?.some((item) => item.experimentId?.title);
 
   return (
     <div className="overflow-x-auto mt-4">
@@ -24,11 +25,15 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
         <thead className="bg-gray-50 text-gray-800">
           <tr>
             <th className="px-4 py-3 font-semibold">STT</th>
+            {hasExperiment && (
+              <th className="px-4 py-3 font-semibold">Tên thí nghiệm</th>
+            )}
             <th className="px-4 py-3 font-semibold">Tên lần đo</th>
             <th className="px-4 py-3 font-semibold">Thời điểm</th>
             <th className="px-4 py-3 font-semibold text-center">Hành động</th>
           </tr>
         </thead>
+
         <tbody className="divide-y divide-gray-100">
           {tableData?.length > 0 ? (
             tableData.map((item, index) => (
@@ -38,6 +43,11 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
                 onClick={(e) => handleRowClick(e, item._id)}
               >
                 <td className="px-4 py-3 text-gray-700">{index + 1}</td>
+                {hasExperiment && (
+                  <td className="px-4 py-3 text-gray-800">
+                    {item.experimentId?.title || "Không rõ"}
+                  </td>
+                )}
                 <td className="px-4 py-3 text-gray-800 font-medium">
                   {item.name || "Không có tên"}
                 </td>
@@ -80,7 +90,7 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
           ) : (
             <tr>
               <td
-                colSpan="4"
+                colSpan={hasExperiment ? 5 : 4}
                 className="px-4 py-6 text-center text-gray-500 italic"
               >
                 Chưa có lần đo nào.

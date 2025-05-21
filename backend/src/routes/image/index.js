@@ -13,17 +13,7 @@ router.use(authentication);
 router.post(
   "/add/:measurementId",
   upload.single("image"),
-  asyncHandler(ImageController.addNormalImageByMeasurementId)
-);
-router.post(
-  "/add/methylene/:measurementId",
-  upload.single("image"),
-  asyncHandler(ImageController.addMethyleneImageByMeasurementId)
-);
-router.post(
-  "/add/counting/:measurementId",
-  upload.single("image"),
-  asyncHandler(ImageController.addCountingImageByMeasurementId)
+  asyncHandler(ImageController.addImageByMeasurementId)
 );
 router.get(
   "/:imageId",
