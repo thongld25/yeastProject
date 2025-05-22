@@ -42,6 +42,32 @@ class ImageController {
     }
   }
 
+  getImagesByUserId = async (req, res, next) => {
+    const userId = req.user.userId;
+    const { page, limit } = req.query;
+    new SuccessResponse({
+      message: "Get images by user id success!",
+      metadata: await ImageService.findImagesByUserIdPage(userId, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  }
+
+  searchImagesOfUser = async (req, res, next) => {
+    const userId = req.user.userId;
+    const {page, limit, name, experimentId, measurementId} = req.query;
+    new SuccessResponse({
+      message: "Search images of user success!",
+      metadata: await ImageService.findImagesOfUser(userId, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+        name,
+        experimentId,
+        measurementId
+      }),
+    }).send(res);
+  }
 }
 
 module.exports = new ImageController();

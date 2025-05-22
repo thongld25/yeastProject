@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 const imageProcessingQueue = require("../queue");
+const userModel = require("../models/user.model.js");
+const experimentModel = require("../models/experiment.model.js");
 const cellData = require("../data/mockData.js").cellData;
 const cellData2 = require("../data/mockData.js").dataMethylene;
 const cellData3 = require("../data/mockData.js").dataLens;
@@ -130,7 +132,10 @@ class ImageService {
 
   static async getImageById(imageId) {
     if (!imageId) throw new BadRequestError("Image ID is required");
-    const image = await imageModel.findById(imageId).populate("measurementId").lean();
+    const image = await imageModel
+      .findById(imageId)
+      .populate("measurementId")
+      .lean();
     if (!image) throw new NotFoundError("Image not found");
     return image;
   }
@@ -212,6 +217,143 @@ class ImageService {
       console.error("Error processing image buffer:", error);
       return null;
     }
+  }
+
+  static async findImagesByUserIdPage(userId, { page = 1, limit = 10 }) {
+    if (!userId) throw new BadRequestError("User ID is required");
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) throw new NotFoundError("User not found");
+    const experiment = await experimentModel
+      .find({ userId: userId })
+      .select("_id")
+      .lean();
+    if (!experiment || experiment.length === 0)
+      throw new NotFoundError("Experiment not found");
+    const experimentIds = experiment.map((e) => e._id);
+    const measurement = await measurementModel
+      .find({ experimentId: { $in: experimentIds } })
+      .select("_id")
+      .lean();
+    if (!measurement || measurement.length === 0)
+      throw new NotFoundError("Measurement not found");
+    const measurementIds = measurement.map((m) => m._id);
+    const [images, total] = await Promise.all([
+      imageModel
+        .find({ measurementId: { $in: measurementIds } })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate({
+          path: "measurementId",
+          select: "name experimentId", // lấy name và khóa ngoại
+          populate: {
+            path: "experimentId",
+            select: "title", // lấy title của experiment
+          },
+        })
+        .lean(),
+      imageModel
+        .find({ measurementId: { $in: measurementIds } })
+        .countDocuments(),
+    ]);
+    if (!images || images.length === 0)
+      throw new NotFoundError("Images not found");
+    return {
+      images,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  static async findImagesOfUser(
+    userId,
+    { name, experimentId, measurementId, page = 1, limit = 10 }
+  ) {
+    if (!userId) throw new BadRequestError("User ID is required");
+
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) throw new NotFoundError("User not found");
+
+    const experiment = await experimentModel
+      .find({ userId })
+      .select("_id")
+      .lean();
+
+    if (!experiment || experiment.length === 0)
+      throw new NotFoundError("Experiment not found");
+
+    const experimentIds = experiment.map((e) => e._id);
+
+    let filteredExperimentIds = experimentIds;
+    if (experimentId) {
+      const experimentIdStr = experimentId.toString();
+      const experimentIdsStr = experimentIds.map((id) => id.toString());
+      if (!experimentIdsStr.includes(experimentIdStr)) {
+        throw new BadRequestError("Invalid experiment ID for this user");
+      }
+      filteredExperimentIds = [experimentId];
+    }
+
+    const measurement = await measurementModel
+      .find({ experimentId: { $in: filteredExperimentIds } })
+      .select("_id")
+      .lean();
+
+    if (!measurement || measurement.length === 0)
+      throw new NotFoundError("Measurement not found");
+    const measurementIds = measurement.map((m) => m._id);
+
+    let filteredMeasurementIds = measurementIds;
+    if (measurementId) {
+      const measurementIdStr = measurementId.toString();
+      const measurementIdsStr = measurementIds.map((id) => id.toString());
+      if (!measurementIdsStr.includes(measurementIdStr)) {
+        throw new BadRequestError("Invalid measurement ID for this experiment");
+      }
+      filteredMeasurementIds = [measurementId];
+    }
+
+    const query = {
+      measurementId: { $in: filteredMeasurementIds },
+    };
+
+    const escapeRegex = (text) => {
+      return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    };
+
+    if (name && name.trim()) {
+      const safeName = escapeRegex(name.trim());
+      query.name = { $regex: safeName, $options: "i" };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [images, total] = await Promise.all([
+      imageModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "measurementId",
+          select: "name experimentId",
+          populate: {
+            path: "experimentId",
+            select: "title",
+          },
+        })
+        .lean(),
+      imageModel.find(query).countDocuments(),
+    ]);
+
+    if (!images || images.length === 0)
+      throw new NotFoundError("Images not found");
+
+    return {
+      images,
+      total,
+      page,
+      limit,
+    };
   }
 }
 

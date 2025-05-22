@@ -104,7 +104,7 @@ export async function updateExperiment(experimentId, data) {
 
 export async function getExperimentById(experimentId) {
   try {
-    const res = await axios.get(`${API_BASE_URL}/experiment/${experimentId}`, {
+    const res = await axios.get(`${API_BASE_URL}/experiment/experiment/${experimentId}`, {
       headers: {
         "x-api-key": API_KEY,
         "x-client-id": localStorage.getItem("userId"),

@@ -16,9 +16,12 @@ router.post(
   asyncHandler(ImageController.addImageByMeasurementId)
 );
 router.get(
-  "/:imageId",
-  asyncHandler(ImageController.getImageById)
+  "/search",
+  asyncHandler(ImageController.searchImagesOfUser)
 );
+router.get("/user", asyncHandler(ImageController.getImagesByUserId));
+
+router.get("/image/:imageId", asyncHandler(ImageController.getImageById));
 router.delete(
   "/delete/:imageId",
   asyncHandler(ImageController.deleteImageById)

@@ -8,6 +8,10 @@ const ImageListTable = ({ tableData, onDelete }) => {
   const handleRowClick = (imageId) => {
     navigate(`/analysis/${imageId}`);
   };
+  const hasMeasurement = tableData?.some((item) => item.measurementId?.name);
+  const hasExperiment = tableData?.some(
+    (item) => item.measurementId?.experimentId?.title
+  );
 
   return (
     <div className="overflow-x-auto mt-4">
@@ -16,6 +20,12 @@ const ImageListTable = ({ tableData, onDelete }) => {
           <tr>
             <th className="px-4 py-3 font-semibold">STT</th>
             <th className="px-4 py-3 font-semibold">Danh sách ảnh</th>
+            {hasExperiment && (
+              <th className="px-4 py-3 font-semibold">Tên thí nghiệm</th>
+            )}
+            {hasMeasurement && (
+              <th className="px-4 py-3 font-semibold">Tên lần đo</th>
+            )}
             <th className="px-4 py-3 font-semibold">Tên ảnh</th>
             <th className="px-4 py-3 font-semibold">Trạng thái</th>
             <th className="px-4 py-3 font-semibold text-center">Hành động</th>
@@ -36,6 +46,16 @@ const ImageListTable = ({ tableData, onDelete }) => {
                     style={{ width: "100px", height: "auto" }}
                   />
                 </td>
+                {hasExperiment && (
+                  <td className="px-4 py-3 text-gray-800">
+                    {item.measurementId?.experimentId?.title || "Không rõ"}
+                  </td>
+                )}
+                {hasMeasurement && (
+                  <td className="px-4 py-3 text-gray-800">
+                    {item.measurementId?.name || "Không rõ"}
+                  </td>
+                )}
 
                 <td className="px-4 py-3 text-gray-800">{item.name || "—"}</td>
 

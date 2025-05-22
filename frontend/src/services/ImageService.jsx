@@ -25,7 +25,7 @@ export async function getImagesOfMeasurement(measurementId) {
 export async function getImagesById(imageId) {
   try {
     const userId = localStorage.getItem("userId");
-    const res = await axios.get(`${API_BASE_URL}/image/${imageId}`, {
+    const res = await axios.get(`${API_BASE_URL}/image/image/${imageId}`, {
       headers: {
         "x-api-key": API_KEY,
         "x-client-id": userId,
@@ -76,5 +76,56 @@ export async function getJobStatus(jobId) {
   } catch (error) {
     console.error("Error fetching users:", error);
     throw error.response.data.message || "Failed to fetch users";
+  }
+}
+
+export async function getImagesByUserIdPage(page = 1, limit = 5) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/image/user`, {
+      params: {
+        page: page,
+        limit: limit,
+      },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    throw error.response?.data?.message || "Failed to fetch images";
+  }
+}
+
+export async function searchImagesOfUser(
+  page = 1,
+  limit = 5,
+  { name, experimentId, measurementId }
+) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/image/search`, {
+      params: {
+        page: page,
+        limit: limit,
+        name,
+        experimentId,
+        measurementId,
+      },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    throw error.response?.data?.message || "Failed to fetch images";
   }
 }

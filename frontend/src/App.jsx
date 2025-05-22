@@ -21,6 +21,7 @@ import Blog from "./pages/Employee/Blog";
 import StatisticsByExperiment from "./pages/Employee/StatisticsByExperiment";
 import StatisticsByMeasurement from "./pages/Employee/StatisticsByMeasurement";
 import MeasurementOfEmployee from "./pages/Employee/MeasurementOfEmployee";
+import ImageOfEmployee from "./pages/Employee/ImageOfEmployee";
 
 const App = () => {
   return (
@@ -64,6 +65,10 @@ const App = () => {
               <Route
                 path="/employee/measurement"
                 element={<MeasurementOfEmployee />}
+              />
+              <Route
+                path="/employee/image"
+                element={<ImageOfEmployee />}
               />
             </Route>
 
