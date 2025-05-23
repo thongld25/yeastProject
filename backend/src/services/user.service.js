@@ -157,7 +157,7 @@ class UserService {
     );
     if (!updatedUser) throw new BadRequestError("Failed to update user");
     return updatedUser;
-  }
+  };
   static async countingExperimentOfUser(userId) {
     if (!userId) throw new BadRequestError("User ID is required");
     const user = await userModel.findById(userId);
@@ -176,8 +176,21 @@ class UserService {
     return {
       experimentCount: experiments.length,
       measurementCount: measurements.length,
-      imageCount: images.length
+      imageCount: images.length,
     };
+  }
+
+  static async getEmployeeOfFactory(userId) {
+    if (!userId) throw new BadRequestError("User ID is required");
+    const user = await userModel.findById(userId);
+    if (!user) throw new BadRequestError("User not found");
+    const factoryId = user.factoryId;
+    if (!factoryId) throw new BadRequestError("Factory not found");
+    const employees = await userModel
+      .find({ factoryId, role: "employee" })
+      .lean();
+    if (!employees) throw new BadRequestError("Employees not found");
+    return employees;
   }
 }
 

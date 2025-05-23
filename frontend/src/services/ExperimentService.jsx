@@ -60,6 +60,24 @@ export async function getExperimentByUserId() {
   }
 }
 
+export async function getExperimentByUserIdOfManager(userId1) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/experiment/manager/user/${userId1}`, {
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy tất cả thí nghiệm");
+    throw error.response.data.message || "Lỗi khi lấy tất cả thí nghiệm";
+  }
+}
+
 export async function deleteExperiment(experimentId) {
   try {
     const res = await axios.delete(
@@ -140,5 +158,53 @@ export async function searchExperimentsOfEmployee(
     return res.data;
   } catch (error) {
     throw error.response?.data?.message || "Lỗi tìm kiếm";
+  }
+}
+
+export async function getExperimentInFactoryOfManager(
+  page = 1,
+  limit = 10
+) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/experiment/manager`, {
+      params: { page, limit },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching experiment:", error);
+    throw error.response.data.message || "Failed to fetch experiment";
+  }
+}
+
+export async function searchExperimentsInFactoryOfManager(
+  title,
+  creatorName,
+  startTime,
+  endTime,
+  page = 1,
+  limit = 10
+) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/experiment/manager/search`, {
+      params: { title, creatorName, startTime, endTime, page, limit },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching experiment:", error);
+    throw error.response.data.message || "Failed to fetch experiment";
   }
 }

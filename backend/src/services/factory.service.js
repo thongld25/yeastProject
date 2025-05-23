@@ -28,19 +28,33 @@ class FactoryService {
 
   // find all factory and number of employees in each factory
   static findAllFactoryWithEmployeeCount = async () => {
-    const factories = await factoryModel.aggregate([
-      {
-        $project: {
-          _id: 1,
-          name: 1,
-          location: 1,
-          createdAt: 1,
-          employeeCount: { $size: "$employees" }, // Đếm trực tiếp mảng employees
+    try {
+      const result = await factoryModel.aggregate([
+        {
+          $lookup: {
+            from: "users", // Tên collection users
+            localField: "_id",
+            foreignField: "factoryId",
+            as: "employees",
+          },
         },
-      },
-    ]);
-    if (!factories) throw new NotFoundError("Factories not found");
-    return factories;
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            location: 1,
+            status: 1,
+            employeeCount: { $size: "$employees" },
+          },
+        },
+      ]);
+
+      return result;
+    } catch (error) {
+      throw new Error(
+        "Error fetching factory list with employee count: " + error.message
+      );
+    }
   };
 
   static findFactoryById = async (id) => {
@@ -114,11 +128,37 @@ class FactoryService {
       await session.abortTransaction(); // Hoàn tác nếu có lỗi
       session.endSession();
       throw error; // Ném lại lỗi để controller xử lý
-    }
-    finally {
+    } finally {
       session.endSession(); // Đảm bảo kết thúc session
     }
   };
+  static countingEmployeeOfFactory = async (userId) => {
+    const user = await userModel.findById(userId);
+    if (!user) throw new NotFoundError("User not found");
+    const factoryId = user.factoryId;
+    if (!factoryId) throw new NotFoundError("Factory not found");
+    const employees = await userModel.find({ factoryId }).lean();
+    if (!employees) throw new NotFoundError("Employees not found");
+    const employeeCount = employees.length;
+    const employeeIds = employees.map((emp) => emp._id);
+    const experiments = await experimentModel
+      .find({ userId: { $in: employeeIds } })
+      .lean();
+    const experimentCount = experiments.length;
+    const experimentIds = experiments.map((exp) => exp._id);
+    const measurements = await mearurementModel
+      .find({ experimentId: { $in: experimentIds } })
+      .lean();
+    const measurementCount = measurements.length;
+    const imageCount = await imageModel.countDocuments({
+      measurementId: { $in: measurements.map((m) => m._id) },
+    });
+    return {
+      employeeCount,
+      experimentCount,
+      measurementCount,
+      imageCount,
+    };
+  };
 }
-
 module.exports = FactoryService;

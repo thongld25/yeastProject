@@ -151,20 +151,61 @@ class MeasurementController {
   };
 
   searchMeasurementOfEmployee = async (req, res, next) => {
-      const { name, startTime, endTime, page = 1, limit = 10 } = req.query;
-      const userId = req.user.userId;
-      new SuccessResponse({
-        message: "Search measurement success!",
-        metadata: await MeasurementService.searchMeasurements({
-          userId,
-          name,
-          startTime,
-          endTime,
-          page: parseInt(page) || 1,
-          limit: parseInt(limit) || 10,
-        }),
-      }).send(res);
-    };
+    const { name, startTime, endTime, page = 1, limit = 10 } = req.query;
+    const userId = req.user.userId;
+    new SuccessResponse({
+      message: "Search measurement success!",
+      metadata: await MeasurementService.searchMeasurements({
+        userId,
+        name,
+        startTime,
+        endTime,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  };
+
+  getMeasurementInFactoryOfManager = async (req, res, next) => {
+    const userId = req.user.userId;
+    const { page, limit } = req.query;
+    new SuccessResponse({
+      message: "Get measurement in factory of manager success!",
+      metadata: await MeasurementService.getMeasurementInFactoryOfManager(
+        userId,
+        {
+          page,
+          limit,
+        }
+      ),
+    }).send(res);
+  };
+
+  searchMeasurementInFactoryOfManager = async (req, res, next) => {
+    const {
+      name,
+      creatorName,
+      experimentTitle,
+      startTime,
+      endTime,
+      page = 1,
+      limit = 10,
+    } = req.query;
+    const userId = req.user.userId;
+    new SuccessResponse({
+      message: "Search measurement success!",
+      metadata: await MeasurementService.searchMeasurementsInFactoryOfManager({
+        userId,
+        name,
+        startTime,
+        endTime,
+        creatorName,
+        experimentTitle,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  };
 }
 
 module.exports = new MeasurementController();

@@ -223,7 +223,6 @@ class MeasurementService {
       throw new NotFoundError("Experiment not found");
     }
     const experimentIds = experiment.map((e) => e._id);
-    
     const query = {
       experimentId: { $in: experimentIds },
     };
@@ -260,7 +259,148 @@ class MeasurementService {
       total,
       page,
       limit,
+    };
+  }
+
+  static async getMeasurementInFactoryOfManager(
+    userId,
+    { page = 1, limit = 10 }
+  ) {
+    if (!userId) {
+      throw new BadRequestError("Missing required fields");
     }
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) {
+      throw new NotFoundError("User not found");
+    }
+    const users = await userModel
+      .find({ factoryId: foundUser.factoryId, role: "employee" })
+      .select("_id")
+      .lean();
+    if (!users) {
+      throw new NotFoundError("Users not found");
+    }
+    const userIds = users.map((u) => u._id);
+    const experiments = await experimentModel
+      .find({ userId: { $in: userIds } })
+      .select("_id")
+      .lean();
+    if (!experiments) {
+      throw new NotFoundError("Experiments not found");
+    }
+    const experimentIds = experiments.map((e) => e._id);
+    const skip = (page - 1) * limit;
+    const [measurements, total] = await Promise.all([
+      measurementModel
+        .find({ experimentId: { $in: experimentIds } })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "experimentId",
+          select: "title userId",
+          populate: {
+            path: "userId",
+            select: "name",
+          },
+        })
+        .lean(),
+      measurementModel
+        .countDocuments({ experimentId: { $in: experimentIds } })
+        .lean(),
+    ]);
+    if (!measurements) {
+      throw new NotFoundError("Measurements not found");
+    }
+    return {
+      measurements,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  static async searchMeasurementsInFactoryOfManager({
+    userId,
+    name,
+    startTime,
+    endTime,
+    creatorName,
+    experimentTitle,
+    page = 1,
+    limit = 10,
+  }) {
+    if (!userId) throw new BadRequestError("Missing required fields");
+
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) throw new NotFoundError("User not found");
+
+    // B1: Tìm tất cả user trong cùng nhà máy
+    const userQuery = { factoryId: foundUser.factoryId };
+    if (creatorName && creatorName.trim()) {
+      const safeName = creatorName
+        .trim()
+        .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      userQuery.name = { $regex: safeName, $options: "i" };
+    }
+    const users = await userModel.find(userQuery).select("_id").lean();
+    const userIds = users.map((u) => u._id);
+
+    // B2: Tìm tất cả experiment thỏa mãn
+    const experimentQuery = { userId: { $in: userIds } };
+    if (experimentTitle && experimentTitle.trim()) {
+      const safeTitle = experimentTitle
+        .trim()
+        .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      experimentQuery.title = { $regex: safeTitle, $options: "i" };
+    }
+    const experiments = await experimentModel
+      .find(experimentQuery)
+      .select("_id")
+      .lean();
+    const experimentIds = experiments.map((e) => e._id);
+
+    // B3: Query measurement
+    const query = { experimentId: { $in: experimentIds } };
+
+    if (name && name.trim()) {
+      const safeName = name.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      query.name = { $regex: safeName, $options: "i" };
+    }
+
+    if ((startTime && startTime.trim()) || (endTime && endTime.trim())) {
+      query.time = {};
+      if (startTime && startTime.trim()) {
+        const start = new Date(startTime);
+        if (!isNaN(start)) query.time.$gte = start;
+      }
+      if (endTime && endTime.trim()) {
+        const end = new Date(endTime);
+        if (!isNaN(end)) query.time.$lte = end;
+      }
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [measurements, total] = await Promise.all([
+      measurementModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "experimentId",
+          select: "title userId",
+          populate: { path: "userId", select: "name" },
+        })
+        .lean(),
+      measurementModel.countDocuments(query),
+    ]);
+
+    return {
+      measurements,
+      total,
+      page,
+      limit,
+    };
   }
 }
 module.exports = MeasurementService;

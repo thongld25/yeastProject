@@ -19,6 +19,11 @@ router.get(
   "/search",
   asyncHandler(ImageController.searchImagesOfUser)
 );
+router.get("/manager/search", asyncHandler(ImageController.searchImagesInFactoryOfManager));
+router.get(
+  "/manager/all",
+  asyncHandler(ImageController.getImagesInFactoryOfManager)
+);
 router.get("/user", asyncHandler(ImageController.getImagesByUserId));
 
 router.get("/image/:imageId", asyncHandler(ImageController.getImageById));

@@ -21,6 +21,14 @@ router.get(
 router.get("/employee", asyncHandler(MeasurementController.getMeasurementOfUser))
 router.get("/employee/search", asyncHandler(MeasurementController.searchMeasurementOfEmployee))
 router.get(
+  "/manager",
+  asyncHandler(MeasurementController.getMeasurementInFactoryOfManager)
+);
+router.get(
+  "/manager/search",
+  asyncHandler(MeasurementController.searchMeasurementInFactoryOfManager)
+);
+router.get(
   "/images/:measurementId",
   asyncHandler(MeasurementController.getImagesByMeasurementId)
 );

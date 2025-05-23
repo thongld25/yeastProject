@@ -106,3 +106,20 @@ export async function updateUser(id, updateData) {
     throw error.response.data.message || "Failed to fetch user profile";
   }
 }
+  export async function getEmployeeInFactoryOfManager(){
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/user/manager/employee`, {
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error.response.data.message || "Failed to fetch user profile";
+  }
+}

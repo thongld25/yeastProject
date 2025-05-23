@@ -39,6 +39,13 @@ class FactoryController {
     }).send(res);
   };
 
+  countingFactory = async (req, res, next) => {
+    const userId = req.user.userId;
+    new SuccessResponse({
+      message: "Counting factory success!",
+      metadata: await FactoryService.countingEmployeeOfFactory(userId),
+    }).send(res);
+  };
 }
 
 module.exports = new FactoryController();

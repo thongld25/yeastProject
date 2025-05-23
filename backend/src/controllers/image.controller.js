@@ -7,7 +7,7 @@ class ImageController {
   addImageByMeasurementId = async (req, res, next) => {
     try {
       const { measurementId } = req.params;
-      const {name} = req.body;
+      const { name } = req.body;
       const image = req.file;
       new SuccessResponse({
         message: "Add image success!",
@@ -40,7 +40,7 @@ class ImageController {
     } catch (err) {
       next(err);
     }
-  }
+  };
 
   getImagesByUserId = async (req, res, next) => {
     const userId = req.user.userId;
@@ -52,11 +52,11 @@ class ImageController {
         limit: parseInt(limit) || 10,
       }),
     }).send(res);
-  }
+  };
 
   searchImagesOfUser = async (req, res, next) => {
     const userId = req.user.userId;
-    const {page, limit, name, experimentId, measurementId} = req.query;
+    const { page, limit, name, experimentId, measurementId } = req.query;
     new SuccessResponse({
       message: "Search images of user success!",
       metadata: await ImageService.findImagesOfUser(userId, {
@@ -64,10 +64,39 @@ class ImageController {
         limit: parseInt(limit) || 10,
         name,
         experimentId,
-        measurementId
+        measurementId,
       }),
     }).send(res);
-  }
+  };
+
+  getImagesInFactoryOfManager = async (req, res, next) => {
+    const userId = req.user.userId;
+    const { page, limit } = req.query;
+    new SuccessResponse({
+      message: "Get images in factory of manager success!",
+      metadata: await ImageService.getImagesInFactoryOfManager(userId, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  };
+
+  searchImagesInFactoryOfManager = async (req, res, next) => {
+    const userId = req.user.userId;
+    const { page, limit, name, experimentId, measurementId, employeeId } =
+      req.query;
+    new SuccessResponse({
+      message: "Search images in factory of manager success!",
+      metadata: await ImageService.searchImagesInFactoryOfManager(userId, {
+        name,
+        employeeId,
+        experimentId,
+        measurementId,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  };
 }
 
 module.exports = new ImageController();

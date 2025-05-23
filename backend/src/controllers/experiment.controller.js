@@ -86,6 +86,42 @@ class ExperimentController {
       metadata: await ExperimentService.findByUserId(userId),
     }).send(res);
   };
+  getExperimentInFactoryOfManager = async (req, res, next) => {
+    const userId = req.user.userId;
+    const { page, limit } = req.query;
+    new SuccessResponse({
+      message: "Get experiment of factory success!",
+      metadata: await ExperimentService.getExperimentInFactoryOfManager(userId, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  }
+
+  searchExperimentsInFactoryOfManager = async (req, res, next) => {
+    const { title, creatorName, startTime, endTime, page = 1, limit = 10 } = req.query;
+    const userId = req.user.userId;
+    new SuccessResponse({
+      message: "Search experiment success!",
+      metadata: await ExperimentService.searchExperimentsInFactoryOfManager({
+        userId,
+        creatorName,
+        title,
+        startTime,
+        endTime,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      }),
+    }).send(res);
+  }
+
+  getExperimentByUserId = async (req, res, next) => {
+    const userId = req.params.userId;
+    new SuccessResponse({
+      message: "Get experiment by user id success!",
+      metadata: await ExperimentService.findByUserId(userId),
+    }).send(res);
+  }
 }
 
 module.exports = new ExperimentController();

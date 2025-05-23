@@ -15,6 +15,9 @@ router.get(
   "/employee",
   asyncHandler(experimentController.getExperimentByUserIdPage)
 );
+router.get("/manager", asyncHandler(experimentController.getExperimentInFactoryOfManager));
+router.get("/manager/search", asyncHandler(experimentController.searchExperimentsInFactoryOfManager));
+router.get("/manager/user/:userId", asyncHandler(experimentController.getExperimentByUserId));
 router.get(
   "/user/all",
   asyncHandler(experimentController.getExperimentOfUser)

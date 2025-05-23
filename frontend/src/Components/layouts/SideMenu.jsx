@@ -1,7 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/userContext";
 import { useNavigate } from "react-router-dom";
-import { SIDE_MENU_DATA, SIDE_MENU_USER_DATA } from "../../utils/data";
+import {
+  SIDE_MENU_DATA,
+  SIDE_MENU_USER_DATA,
+  SIDE_MENU_MANAGER_DATA,
+} from "../../utils/data";
 import AVATAR_IMG from "../../assets/images/avatar.jpg";
 
 const SideMenu = ({ activeMenu }) => {
@@ -31,8 +35,17 @@ const SideMenu = ({ activeMenu }) => {
 
   useEffect(() => {
     if (user) {
-      const menu =
-        user?.role === "admin" ? SIDE_MENU_DATA : SIDE_MENU_USER_DATA;
+      // const menu =
+      //   user?.role === "admin" ? SIDE_MENU_DATA : SIDE_MENU_USER_DATA;
+      // setSideMenuData(menu);
+      let menu = [];
+      if (user?.role === "admin") {
+        menu = SIDE_MENU_DATA;
+      } else if (user?.role === "employee") {
+        menu = SIDE_MENU_USER_DATA;
+      } else {
+        menu = SIDE_MENU_MANAGER_DATA;
+      }
       setSideMenuData(menu);
 
       // Tự mở menu cha nếu activeMenu là một submenu

@@ -45,6 +45,13 @@ class UserController {
       metadata: await UserService.countingExperimentOfUser(userId),
     }).send(res);
   };
+  getEmployeeOfFactory = async (req, res, next) => {
+    const userId = req.user.userId;
+    new SuccessResponse({
+      message: "Get employee of factory success!",
+      metadata: await UserService.getEmployeeOfFactory(userId),
+    }).send(res);
+  };
 }
 
 module.exports = new UserController();

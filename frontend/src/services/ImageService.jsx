@@ -129,3 +129,55 @@ export async function searchImagesOfUser(
     throw error.response?.data?.message || "Failed to fetch images";
   }
 }
+
+export async function getImagesInFactoryOfManager(page = 1, limit = 5) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/image/manager/all`, {
+      params: {
+        page: page,
+        limit: limit,
+      },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    throw error.response?.data?.message || "Failed to fetch images";
+  }
+}
+
+export async function searchImagesInFactoryOfManager(
+  page = 1,
+  limit = 5,
+  { name, experimentId, measurementId, employeeId }
+) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/image/manager/search`, {
+      params: {
+        page: page,
+        limit: limit,
+        name,
+        experimentId,
+        measurementId,
+        employeeId,
+      },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    throw error.response?.data?.message || "Failed to fetch images";
+  }
+}

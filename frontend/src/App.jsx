@@ -22,6 +22,13 @@ import StatisticsByExperiment from "./pages/Employee/StatisticsByExperiment";
 import StatisticsByMeasurement from "./pages/Employee/StatisticsByMeasurement";
 import MeasurementOfEmployee from "./pages/Employee/MeasurementOfEmployee";
 import ImageOfEmployee from "./pages/Employee/ImageOfEmployee";
+import ManagerDashbroad from "./pages/Manager/ManagerDashbroad";
+import EmployeeOfFactory2 from "./pages/Manager/EmployeeOfFactory2";
+import ExperimentOfManager from "./pages/Manager/ExperimentOfManager";
+import StatisticsByExperimentManager from "./pages/Manager/StatisticsByExperimentManager";
+import StatisticsByMeasurementManager from "./pages/Manager/StatisticsByMeasurementManager";
+import MeasurementOfManager from "./pages/Manager/MeasurementOfManager";
+import ImageOfManager from "./pages/Manager/ImageOfManager";
 
 const App = () => {
   return (
@@ -66,12 +73,36 @@ const App = () => {
                 path="/employee/measurement"
                 element={<MeasurementOfEmployee />}
               />
+              <Route path="/employee/images" element={<ImageOfEmployee />} />
+            </Route>
+            {/* Manager Routes */}
+            <Route element={<PrivateRoute allowedRoles={["manager"]} />}>
+              <Route path="/manager/dashboard" element={<ManagerDashbroad />} />
               <Route
-                path="/employee/image"
-                element={<ImageOfEmployee />}
+                path="/manager/employee"
+                element={<EmployeeOfFactory2 />}
+              />
+              <Route
+                path="/manager/experiment"
+                element={<ExperimentOfManager />}
+              />
+              <Route
+                path="/manager/measurement"
+                element={<MeasurementOfManager />}
+              />
+              <Route
+                path="/manager/images"
+                element={<ImageOfManager />}
+              />
+              <Route
+                path="/manager/statistics/by-experiment"
+                element={<StatisticsByExperimentManager />}
+              />
+              <Route
+                path="/manager/statistics/by-measurement"
+                element={<StatisticsByMeasurementManager />}
               />
             </Route>
-
             {/* Default Route */}
             <Route path="/" element={<Root />} />
           </Routes>
@@ -99,9 +130,11 @@ const Root = () => {
     return <Navigate to="/login" />;
   }
 
-  return user.role === "admin" ? (
-    <Navigate to="/admin/dashboard" />
-  ) : (
-    <Navigate to="/employee/dashboard" />
-  );
+  if (user.role === "admin") {
+    return <Navigate to="/admin/dashboard" />;
+  } else if (user.role === "manager") {
+    return <Navigate to="/manager/dashboard" />;
+  } else {
+    return <Navigate to="/employee/dashboard" />;
+  }
 };

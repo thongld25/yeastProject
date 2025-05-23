@@ -45,8 +45,8 @@ export async function createMeasurement(
     );
     return res.data;
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error.response.data.message || "Failed to fetch users";
+    console.error("Error create measurement:", error);
+    throw error.response.data.message || "Failed to create measurement";
   }
 }
 
@@ -71,8 +71,8 @@ export async function addImage(measurementId, image, name) {
     );
     return res.data;
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error.response.data.message || "Failed to fetch users";
+    console.error("Error add measurement:", error);
+    throw error.response.data.message || "Failed to add measurement";
   }
 }
 
@@ -92,8 +92,8 @@ export async function deleteMeasurement(measurementId) {
     );
     return res.data;
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error.response.data.message || "Failed to fetch users";
+    console.error("Error delete measurement:", error);
+    throw error.response.data.message || "Failed to delete measurement";
   }
 }
 
@@ -138,8 +138,8 @@ export async function getMeasurementById(measurementId) {
     );
     return res.data;
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error.response.data.message || "Failed to fetch users";
+    console.error("Error fetching measurement:", error);
+    throw error.response.data.message || "Failed to fetch measurement";
   }
 }
 
@@ -157,8 +157,8 @@ export async function getMeasurementOfUser(page = 1, limit = 5) {
     });
     return res.data;
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error.response.data.message || "Failed to fetch users";
+    console.error("Error fetching measurement:", error);
+    throw error.response.data.message || "Failed to fetch measurement";
   }
 }
 
@@ -182,7 +182,61 @@ export async function searchMeasurementOfEmployee(
     });
     return res.data;
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error.response.data.message || "Failed to fetch users";
+    console.error("Error fetching measurement:", error);
+    throw error.response.data.message || "Failed to fetch measurement";
+  }
+}
+
+export async function getMeasurementsInFactoryOfManager(page = 1, limit = 5) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/measurement/manager`, {
+      params: { page, limit },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching measurement:", error);
+    throw error.response.data.message || "Failed to fetch measurement";
+  }
+}
+
+export async function searchMeasurementsInFactoryOfManager(
+  name,
+  creatorName,
+  experimentTitle,
+  startTime,
+  endTime,
+  page = 1,
+  limit = 5
+) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.get(`${API_BASE_URL}/measurement/manager/search`, {
+      params: {
+        name,
+        creatorName,
+        experimentTitle,
+        startTime,
+        endTime,
+        page,
+        limit,
+      },
+      headers: {
+        "x-api-key": API_KEY,
+        "x-client-id": userId,
+        authorization: localStorage.getItem("accessToken"),
+        refreshtoken: localStorage.getItem("refreshToken"),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching measurement:", error);
+    throw error.response.data.message || "Failed to fetch measurement";
   }
 }
