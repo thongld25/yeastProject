@@ -134,7 +134,14 @@ class ImageService {
     if (!imageId) throw new BadRequestError("Image ID is required");
     const image = await imageModel
       .findById(imageId)
-      .populate("measurementId")
+      .populate({
+        path: "measurementId",
+        select: "name experimentId",
+        populate: {
+          path: "experimentId",
+          select: "title",
+        },
+      })
       .lean();
     if (!image) throw new NotFoundError("Image not found");
     return image;
@@ -531,6 +538,21 @@ class ImageService {
       page,
       limit,
     };
+  }
+
+  static async editTypeBacteria(imageId, cell_id, type){
+    if (!imageId) throw new BadRequestError("Image ID is required");
+    if (!cell_id) throw new BadRequestError("Cell ID is required");
+    if (!type) throw new BadRequestError("Type is required");
+
+    const image = await imageModel.updateOne(
+      { _id: imageId, "bacteriaData.cell_id": cell_id },
+      { $set: { "bacteriaData.$.type": type } }
+    );
+    if (image.modifiedCount === 0) {
+      throw new NotFoundError("Image or cell not found");
+    }
+    return { message: "Type updated successfully" };
   }
 }
 

@@ -181,3 +181,29 @@ export async function searchImagesInFactoryOfManager(
     throw error.response?.data?.message || "Failed to fetch images";
   }
 }
+
+export async function editTypeBacteria(imageId, cell_id, type) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const data = {
+      cell_id: cell_id,
+      type: type,
+    };
+    const res = await axios.put(
+      `${API_BASE_URL}/image/update/typeBacteria/${imageId}`,
+      data,
+      {
+        headers: {
+          "x-api-key": API_KEY,
+          "x-client-id": userId,
+          authorization: localStorage.getItem("accessToken"),
+          refreshtoken: localStorage.getItem("refreshToken"),
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error updating bacteria type:", error);
+    throw error.response?.data?.message || "Failed to update bacteria type";
+  }
+}

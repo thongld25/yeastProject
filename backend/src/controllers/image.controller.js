@@ -97,6 +97,19 @@ class ImageController {
       }),
     }).send(res);
   };
+
+  editTypeBacteria = async (req, res, next) => {
+    try {
+      const { imageId } = req.params;
+      const { cell_id, type } = req.body;
+      new SuccessResponse({
+        message: "Edit type bacteria success!",
+        metadata: await ImageService.editTypeBacteria(imageId, cell_id, type),
+      }).send(res);
+    } catch (err) {
+      next(err);
+    }
+  };
 }
 
 module.exports = new ImageController();

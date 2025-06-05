@@ -5,7 +5,11 @@ import { useUserAuth } from "../../hooks/useUserAuth";
 import { UserContext } from "../../context/userContext";
 import { useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getImagesById, getJobStatus } from "../../services/ImageService";
+import {
+  editTypeBacteria,
+  getImagesById,
+  getJobStatus,
+} from "../../services/ImageService";
 import BacteriaImage from "../../components/BacteriaImage";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
@@ -24,125 +28,10 @@ const AnalysisImage = () => {
   const [cellStats, setCellStats] = useState(null);
   const [showSquares, setShowSquares] = useState(true);
   const [measurement, setMeasurement] = useState(null);
-  // const [hasFailed, setHasFailed] = useState(false);
-  // const [hasError, setHasError] = useState(false);
+  const [reportMode, setReportMode] = useState(false);
+  const [editedType, setEditedType] = useState("");
 
-  // const handleFailedImage = async (img) => {
-  //   if (pollingIntervalRef.current) {
-  //     clearInterval(pollingIntervalRef.current);
-  //     pollingIntervalRef.current = null;
-  //   }
-  //   setHasFailed(true);
-  //   toast.error("Phân tích ảnh thất bại");
-
-  //   if (jobId) {
-  //     try {
-  //       await getJobStatus(jobId);
-  //     } catch (err) {
-  //       console.error("Gọi job status lần cuối thất bại:", err);
-  //     }
-  //   }
-
-  //   if (img.measurementId) {
-  //     window.location.href = `/images/${img.measurementId._id}`;
-  //   }
-  // };
-  // const fetchImage = async () => {
-  //   try {
-  //     const res = await getImagesById(imageId);
-  //     console.log("Image data:", res);
-  //     if (res.status === 200 && res.metadata) {
-  //       const img = res.metadata;
-  //       setMeasurement(img.measurementId);
-  //       setImage(img);
-
-  //       if (img.status === "failed") {
-  //         await handleFailedImage(img);
-  //         return;
-  //       }
-
-  //       if (img.status === "completed") {
-  //         await processImageStats(img);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Fetch image error:", error);
-  //     toast.error("Không lấy được thông tin ảnh");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const processImageStats = async (img) => {
-  //   try {
-  //     let stats;
-  //     if (measurement.imageType === "methylene") {
-  //       stats = { alive: 0, dead: 0 };
-  //       img.bacteriaData?.forEach((cell) => {
-  //         if (cell.type === "alive") stats.alive++;
-  //         else if (cell.type === "dead") stats.dead++;
-  //       });
-  //     } else {
-  //       stats = {
-  //         normal: 0,
-  //         abnormal: 0,
-  //         normal_2x: 0,
-  //         abnormal_2x: 0,
-  //       };
-  //       img.bacteriaData?.forEach((cell) => {
-  //         if (cell.type && stats.hasOwnProperty(cell.type)) {
-  //           stats[cell.type]++;
-  //         }
-  //       });
-  //     }
-  //     setCellStats(stats);
-  //   } catch (error) {
-  //     console.error("Error processing stats:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const fetchAndPoll = async () => {
-  //     await fetchImage();
-
-  //     if (jobId) {
-  //       pollingIntervalRef.current = setInterval(async () => {
-  //         try {
-  //           const jobRes = await getJobStatus(jobId);
-
-  //           if (jobRes.status === "completed") {
-  //             clearInterval(pollingIntervalRef.current);
-  //             pollingIntervalRef.current = null;
-  //             await fetchImage();
-  //           } else if (jobRes.status === "failed") {
-  //             clearInterval(pollingIntervalRef.current);
-  //             pollingIntervalRef.current = null;
-  //             await fetchImage();
-  //           } else if (jobRes.status === "waiting") {
-  //             toast.loading("Đang chờ phân tích ảnh...");
-  //           } else if (jobRes.status !== "active") {
-  //             clearInterval(pollingIntervalRef.current);
-  //             pollingIntervalRef.current = null;
-  //             toast.error("Trạng thái phân tích không xác định");
-  //           }
-  //         } catch (err) {
-  //           console.error("Polling job status error:", err);
-  //           if (pollingIntervalRef.current) {
-  //             clearInterval(pollingIntervalRef.current);
-  //             pollingIntervalRef.current = null;
-  //           }
-  //           if (!hasError) {
-  //             setHasError(true);
-  //             toast.error("Lỗi khi kiểm tra trạng thái phân tích");
-  //           }
-  //         }
-  //       }, 5000);
-  //     }
-  //   };
-
-  //   fetchAndPoll();
-
-    const fetchImage = async () => {
+  const fetchImage = async () => {
     try {
       const res = await getImagesById(imageId);
       console.log("Fetched image data:", res);
@@ -205,6 +94,31 @@ const AnalysisImage = () => {
       setLoading(false);
     }
   };
+  const handleReportSubmit = async () => {
+    try {
+      const res = await editTypeBacteria(
+        imageId,
+        selectedCell.cell_id,
+        editedType
+      );
+      if (res.status === 200) {
+        toast.success("Đã gửi báo lỗi thành công");
+        setReportMode(false);
+        setSelectedCell(null);
+        fetchImage();
+      }
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      toast.error("Gửi báo lỗi thất bại");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCell) {
+      setEditedType(selectedCell.type || "");
+      setReportMode(false);
+    }
+  }, [selectedCell]);
 
   useEffect(() => {
     fetchImage();
@@ -250,6 +164,19 @@ const AnalysisImage = () => {
 
   return (
     <DashbroardLayout activeMenu="Thí nghiệm">
+      <div className="bg-white rounded shadow p-4 my-6">
+        <h1 className="text-xl font-bold text-indigo-700 mb-2">
+          {measurement?.experimentId?.title || "Chưa có tiêu đề thí nghiệm"}
+        </h1>
+        <div className="text-gray-700 text-sm space-y-1">
+          <div>
+            <strong>Tên lần đo:</strong> {measurement?.name || "Không có"}
+          </div>
+          <div>
+            <strong>Tên ảnh:</strong> {image?.name || "Không rõ"}
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-6">
         <div>
           <h2 className="text-lg font-semibold mb-2">Ảnh gốc</h2>
@@ -393,6 +320,48 @@ const AnalysisImage = () => {
             >
               Đóng
             </button>
+            <button
+              className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded"
+              onClick={() => setReportMode(true)}
+            >
+              Báo lỗi / Chỉnh sửa
+            </button>
+
+            {reportMode && (
+              <div className="mt-4 space-y-2">
+                <div>
+                  <label className="block text-sm font-medium">
+                    Chỉnh sửa loại tế bào:
+                  </label>
+                  <select
+                    className="border rounded p-1"
+                    value={editedType}
+                    onChange={(e) => setEditedType(e.target.value)}
+                  >
+                    <option value="normal">Bình thường</option>
+                    <option value="abnormal">Bất thường</option>
+                    <option value="normal_2x">Nảy chồi bình thường</option>
+                    <option value="abnormal_2x">Nảy chồi bất thường</option>
+                    <option value="alive">Tế bào sống</option>
+                    <option value="dead">Tế bào chết</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3 py-1 bg-green-600 text-white rounded"
+                    onClick={handleReportSubmit}
+                  >
+                    Gửi báo lỗi
+                  </button>
+                  <button
+                    className="px-3 py-1 bg-gray-400 text-white rounded"
+                    onClick={() => setReportMode(false)}
+                  >
+                    Huỷ
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

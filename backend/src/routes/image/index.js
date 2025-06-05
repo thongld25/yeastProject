@@ -31,5 +31,9 @@ router.delete(
   "/delete/:imageId",
   asyncHandler(ImageController.deleteImageById)
 );
+router.put(
+  "/update/typeBacteria/:imageId",
+  asyncHandler(ImageController.editTypeBacteria)
+);
 
 module.exports = router;

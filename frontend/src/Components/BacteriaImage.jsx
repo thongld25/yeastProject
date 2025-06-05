@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useContext } from "react";
 import inside from "point-in-polygon";
+import { TransformComponent } from "react-zoom-pan-pinch";
 
 const BacteriaImage = ({
   imagePath,
@@ -7,11 +8,56 @@ const BacteriaImage = ({
   onCellClick,
   lensType,
   points,
-  showSquares,
+  showSquares
 }) => {
   const imageRef = useRef(null);
   const [scale, setScale] = useState({ x: 1, y: 1 });
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleDownload = () => {
+    if (!imageRef.current || !imageLoaded || !bacteriaData) return;
+
+    const canvas = document.createElement("canvas");
+    const img = imageRef.current;
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+
+    const baseImg = new Image();
+    baseImg.crossOrigin = "anonymous";
+    baseImg.src = imagePath;
+
+    baseImg.onload = () => {
+      ctx.drawImage(baseImg, 0, 0);
+
+      // Vẽ cell
+      bacteriaData.forEach((cell) => {
+        const color =
+          cell.type === "normal"
+            ? "green"
+            : cell.type === "abnormal_2x"
+            ? "blue"
+            : cell.type === "normal_2x"
+            ? "blue"
+            : cell.type === "abnormal"
+            ? "red"
+            : cell.type === "alive"
+            ? "green"
+            : "red";
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cell.x, cell.y, cell.width, cell.height);
+      });
+
+      // Tải ảnh
+      const link = document.createElement("a");
+      link.download = "anh_phan_tich.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+  };
 
   const countCellsInSquares = (squares) => {
     return squares.map((square) => {
@@ -101,6 +147,15 @@ const BacteriaImage = ({
           e.target.src = "/uploads/mau.jpeg";
         }}
       />
+
+      <div className="mb-2 text-right">
+        <button
+          onClick={handleDownload}
+          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+        >
+          Tải ảnh phân tích
+        </button>
+      </div>
 
       {/* Vẽ cell */}
       {imageLoaded &&
