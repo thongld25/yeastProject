@@ -9,6 +9,7 @@ import {
   editTypeBacteria,
   getImagesById,
   getJobStatus,
+  reportBacteria,
 } from "../../services/ImageService";
 import BacteriaImage from "../../components/BacteriaImage";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -28,6 +29,7 @@ const AnalysisImage = () => {
   const [cellStats, setCellStats] = useState(null);
   const [showSquares, setShowSquares] = useState(true);
   const [measurement, setMeasurement] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [reportMode, setReportMode] = useState(false);
   const [editedType, setEditedType] = useState("");
 
@@ -94,7 +96,7 @@ const AnalysisImage = () => {
       setLoading(false);
     }
   };
-  const handleReportSubmit = async () => {
+  const handleEditSubmit = async () => {
     try {
       const res = await editTypeBacteria(
         imageId,
@@ -103,12 +105,12 @@ const AnalysisImage = () => {
       );
       if (res.status === 200) {
         toast.success("Đã gửi báo lỗi thành công");
-        setReportMode(false);
+        setEditMode(false);
         setSelectedCell(null);
         fetchImage();
       }
     } catch (error) {
-      console.error("Error submitting report:", error);
+      console.error("Error submitting edit:", error);
       toast.error("Gửi báo lỗi thất bại");
     }
   };
@@ -116,7 +118,7 @@ const AnalysisImage = () => {
   useEffect(() => {
     if (selectedCell) {
       setEditedType(selectedCell.type || "");
-      setReportMode(false);
+      setEditMode(false);
     }
   }, [selectedCell]);
 
@@ -204,6 +206,7 @@ const AnalysisImage = () => {
                 lensType={measurement.lensType}
                 points={image.points}
                 showSquares={showSquares}
+                modalOpen={modalOpen}
               />
             </div>
           )}
@@ -254,6 +257,7 @@ const AnalysisImage = () => {
                   points={image.points}
                   showSquares={showSquares}
                   onCellClick={(cell) => setSelectedCell(cell)}
+                  modalOpen={modalOpen}
                 />
               </TransformComponent>
             </TransformWrapper>
@@ -314,20 +318,106 @@ const AnalysisImage = () => {
                 {selectedCell.max_distance}
               </div>
             </div>
-            <button
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-              onClick={() => setSelectedCell(null)}
-            >
-              Đóng
-            </button>
-            <button
-              className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded"
-              onClick={() => setReportMode(true)}
-            >
-              Báo lỗi / Chỉnh sửa
-            </button>
+            <div className="flex gap-2 mt-4 flex-wrap">
+              <button
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                onClick={() => setSelectedCell(null)}
+              >
+                Đóng
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={() => setEditMode(true)}
+              >
+                Chỉnh sửa loại
+              </button>
+              <button
+                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                onClick={() => setReportMode(true)}
+              >
+                Báo lỗi AI
+              </button>
+            </div>
 
             {reportMode && (
+              <div className="mt-4 space-y-4">
+                {/* PHẦN 1: Checkbox báo sai loại tế bào */}
+                <div className="border rounded p-3">
+                  <label className="flex items-center gap-2 text-sm text-yellow-700">
+                    <input
+                      type="checkbox"
+                      checked={selectedCell?.wrongType || false}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setSelectedCell((prev) => ({
+                          ...prev,
+                          wrongType: isChecked,
+                        }));
+                        if (isChecked)
+                          toast.success("Đã đánh dấu sai loại tế bào");
+                      }}
+                    />
+                    ⚠️ Nhận diện sai loại tế bào
+                  </label>
+                </div>
+
+                {/* PHẦN 2: Checkbox báo sai bounding box */}
+                <div className="border rounded p-3">
+                  <label className="flex items-center gap-2 text-sm text-red-700">
+                    <input
+                      type="checkbox"
+                      checked={selectedCell?.wrongBox || false}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setSelectedCell((prev) => ({
+                          ...prev,
+                          wrongBox: isChecked,
+                        }));
+                        if (isChecked)
+                          toast.success("Đã đánh dấu sai bounding box");
+                      }}
+                    />
+                    🚩 Box bao không đúng vị trí tế bào
+                  </label>
+                </div>
+
+                {/* Gửi báo cáo */}
+                <div className="flex gap-2">
+                  <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onClick={async () => {
+                      try {
+                        const res = await reportBacteria(
+                          imageId,
+                          selectedCell.cell_id,
+                          selectedCell.wrongType,
+                          selectedCell.wrongBox
+                        );
+                        if (res.status === 200) {
+                          toast.success("Đã gửi báo cáo thành công");
+                          setReportMode(false);
+                          setSelectedCell(null);
+                          fetchImage();
+                        }
+                      } catch (error) {
+                        console.error("Report error:", error);
+                        toast.error("Lỗi khi gửi báo cáo");
+                      }
+                    }}
+                  >
+                    Gửi báo cáo
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-gray-400 text-white rounded"
+                    onClick={() => setReportMode(false)}
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {editMode && (
               <div className="mt-4 space-y-2">
                 <div>
                   <label className="block text-sm font-medium">
@@ -349,13 +439,13 @@ const AnalysisImage = () => {
                 <div className="flex gap-2">
                   <button
                     className="px-3 py-1 bg-green-600 text-white rounded"
-                    onClick={handleReportSubmit}
+                    onClick={handleEditSubmit}
                   >
-                    Gửi báo lỗi
+                    Chỉnh sửa
                   </button>
                   <button
                     className="px-3 py-1 bg-gray-400 text-white rounded"
-                    onClick={() => setReportMode(false)}
+                    onClick={() => setEditMode(false)}
                   >
                     Huỷ
                   </button>

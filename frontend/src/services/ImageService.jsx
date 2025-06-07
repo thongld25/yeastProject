@@ -207,3 +207,30 @@ export async function editTypeBacteria(imageId, cell_id, type) {
     throw error.response?.data?.message || "Failed to update bacteria type";
   }
 }
+
+export async function reportBacteria(imageId, cell_id, wrongType, wrongBox) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const data = {
+      cell_id: cell_id,
+      wrongType: wrongType,
+      wrongBox: wrongBox,
+    };
+    const res = await axios.put(
+      `${API_BASE_URL}/image/update/report/${imageId}`,
+      data,
+      {
+        headers: {
+          "x-api-key": API_KEY,
+          "x-client-id": userId,
+          authorization: localStorage.getItem("accessToken"),
+          refreshtoken: localStorage.getItem("refreshToken"),
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error updating bacteria type:", error);
+    throw error.response?.data?.message || "Failed to update bacteria type";
+  }
+}

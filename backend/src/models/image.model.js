@@ -41,6 +41,14 @@ const ImageSchema = new mongoose.Schema({
       type: {
         type: String,
       },
+      wrongType:{
+        type: Boolean,
+        default: false,
+      },
+      wrongBox:{
+        type: Boolean,
+        default: false,
+      },
       area: Number,
       perimeter: Number,
       circularity: Number,

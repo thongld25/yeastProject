@@ -8,7 +8,8 @@ const BacteriaImage = ({
   onCellClick,
   lensType,
   points,
-  showSquares
+  showSquares,
+  modalOpen,
 }) => {
   const imageRef = useRef(null);
   const [scale, setScale] = useState({ x: 1, y: 1 });
@@ -147,15 +148,16 @@ const BacteriaImage = ({
           e.target.src = "/uploads/mau.jpeg";
         }}
       />
-
-      <div className="mb-2 text-right">
-        <button
-          onClick={handleDownload}
-          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-        >
-          Tải ảnh phân tích
-        </button>
-      </div>
+      {imageLoaded && !modalOpen && (
+        <div className="mt-2 text-center">
+          <button
+            onClick={handleDownload}
+            className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 shadow"
+          >
+            Tải ảnh phân tích
+          </button>
+        </div>
+      )}
 
       {/* Vẽ cell */}
       {imageLoaded &&
@@ -192,7 +194,9 @@ const BacteriaImage = ({
                 cursor: "pointer",
                 boxSizing: "border-box",
               }}
-              title={`Cell ${cell.cell_id}`}
+              title={`Cell ${cell.cell_id}${
+                cell.wrongType ? " - ⚠ Sai loại" : ""
+              }${cell.wrongBox ? " - 🚩 Sai box" : ""}`}
             >
               <div
                 style={{

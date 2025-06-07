@@ -35,5 +35,9 @@ router.put(
   "/update/typeBacteria/:imageId",
   asyncHandler(ImageController.editTypeBacteria)
 );
+router.put(
+  "/update/report/:imageId",
+  asyncHandler(ImageController.reportBacteria)
+);
 
 module.exports = router;

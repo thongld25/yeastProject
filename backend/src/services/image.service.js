@@ -136,7 +136,7 @@ class ImageService {
       .findById(imageId)
       .populate({
         path: "measurementId",
-        select: "name experimentId",
+        select: "name imageType lensType experimentId",
         populate: {
           path: "experimentId",
           select: "title",
@@ -540,7 +540,7 @@ class ImageService {
     };
   }
 
-  static async editTypeBacteria(imageId, cell_id, type){
+  static async editTypeBacteria(imageId, cell_id, type) {
     if (!imageId) throw new BadRequestError("Image ID is required");
     if (!cell_id) throw new BadRequestError("Cell ID is required");
     if (!type) throw new BadRequestError("Type is required");
@@ -553,6 +553,25 @@ class ImageService {
       throw new NotFoundError("Image or cell not found");
     }
     return { message: "Type updated successfully" };
+  }
+
+  static async reportBacteria(imageId, cell_id, wrongType, wrongBox) {
+    if (!imageId) throw new BadRequestError("Image ID is required");
+    if (!cell_id) throw new BadRequestError("Cell ID is required");
+
+    const image = await imageModel.updateOne(
+      { _id: imageId, "bacteriaData.cell_id": cell_id },
+      {
+        $set: {
+          "bacteriaData.$.wrongType": wrongType,
+          "bacteriaData.$.wrongBox": wrongBox,
+        },
+      }
+    );
+    if (image.modifiedCount === 0) {
+      throw new NotFoundError("Image or cell not found");
+    }
+    return { message: "Report successfully" };
   }
 }
 

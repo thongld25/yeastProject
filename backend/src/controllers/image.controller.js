@@ -110,6 +110,19 @@ class ImageController {
       next(err);
     }
   };
+
+  reportBacteria = async (req, res, next) => {
+    try {
+      const { imageId } = req.params;
+      const { cell_id, wrongType, wrongBox } = req.body;
+      new SuccessResponse({
+        message: "Report bacteria success!",
+        metadata: await ImageService.reportBacteria(imageId, cell_id, wrongType, wrongBox),
+      }).send(res);
+    } catch (err) {
+      next(err);
+    }
+  };
 }
 
 module.exports = new ImageController();
