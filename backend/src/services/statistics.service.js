@@ -26,10 +26,8 @@ class StatisticsService {
 
     const statsByImage = images.map((img, idx) => {
       const stats = {
-        normal: 0,
-        abnormal: 0,
-        normal_2x: 0,
-        abnormal_2x: 0,
+        Normal: 0,
+        Abnormal: 0,
         alive: 0,
         dead: 0,
       };
@@ -73,10 +71,8 @@ class StatisticsService {
 
     const statsByMeasurement = measurements.map((m, idx) => {
       const stats = {
-        normal: 0,
-        abnormal: 0,
-        normal_2x: 0,
-        abnormal_2x: 0,
+        Normal: 0,
+        Abnormal: 0,
         alive: 0,
         dead: 0,
       };

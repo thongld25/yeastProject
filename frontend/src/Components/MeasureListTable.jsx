@@ -29,6 +29,8 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
               <th className="px-4 py-3 font-semibold">Tên thí nghiệm</th>
             )}
             <th className="px-4 py-3 font-semibold">Tên lần đo</th>
+            <th className="px-4 py-3 font-semibold">Loại ảnh</th>
+            <th className="px-4 py-3 font-semibold">Loại lăng kính</th>
             <th className="px-4 py-3 font-semibold">Thời điểm</th>
             <th className="px-4 py-3 font-semibold text-center">Hành động</th>
           </tr>
@@ -50,6 +52,12 @@ const MeasurementListTable = ({ tableData, onEdit, onDelete }) => {
                 )}
                 <td className="px-4 py-3 text-gray-800 font-medium">
                   {item.name || "Không có tên"}
+                </td>
+                <td className="px-4 py-3 text-gray-800 font-medium">
+                  {item.imageType || "N/A"}
+                </td>
+                <td className="px-4 py-3 text-gray-800 font-medium">
+                  {item.lensType || "N/A"}
                 </td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                   {item.time

@@ -20,10 +20,8 @@ import { getExperimentByUserId, getExperimentsOfEmployee } from "../../services/
 import { useSearchParams } from "react-router-dom";
 
 const COLORS = {
-  normal: "#60a5fa",
-  abnormal: "#f97316",
-  normal_2x: "#10b981",
-  abnormal_2x: "#facc15",
+  Normal: "#60a5fa",
+  Abnormal: "#f97316",
   alive: "#34d399",
   dead: "#f87171",
 };
@@ -32,8 +30,6 @@ const PDF_TABLE_HEADERS = [
   "Tên lần đo",
   "Tế bào bình thường",
   "Tế bào bất thường",
-  "Tế bào nảy chồi bình thường",
-  "Tế bào nảy chồi bất thường",
   "Tế bào sống",
   "Tế bào chết",
   "Tổng số tế bào",
@@ -265,16 +261,10 @@ const StatisticsByExperiment = () => {
                         {item.name} 
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.normal} ({((item.normal / item.total)*100).toFixed(2)} %)
+                        {item.Normal} ({((item.Normal / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.abnormal} ({((item.abnormal / item.total)*100).toFixed(2)} %)
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.normal_2x} ({((item.normal_2x / item.total)*100).toFixed(2)} %)
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.abnormal_2x} ({((item.abnormal_2x / item.total)*100).toFixed(2)} %)
+                        {item.Abnormal} ({((item.Abnormal / item.total)*100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b text-green-600 font-semibold">
                         {item.alive} ({((item.alive / item.total)*100).toFixed(2)} %)

@@ -10,6 +10,7 @@ import {
   getImagesById,
   getJobStatus,
   reportBacteria,
+  updateInfoBacteria,
 } from "../../services/ImageService";
 import BacteriaImage from "../../components/BacteriaImage";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -32,6 +33,48 @@ const AnalysisImage = () => {
   const [editMode, setEditMode] = useState(false);
   const [reportMode, setReportMode] = useState(false);
   const [editedType, setEditedType] = useState("");
+
+  const handleCellClick = async (cell) => {
+    try {
+      const res = await updateInfoBacteria(imageId, cell.cell_id);
+      console.log("Cell info response:", res);
+      if (res.status === 200 && res.metadata) {
+        setSelectedCell(res.metadata);
+      } else {
+        setSelectedCell(cell);
+        toast.error("Không lấy được thông tin tế bào");
+      }
+    } catch (error) {
+      console.error("Error fetching cell info:", error);
+      toast.error("Lỗi khi lấy thông tin tế bào");
+    }
+  };
+
+  const handleDownloadMask = () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const maskImg = new Image();
+    maskImg.crossOrigin = "anonymous";
+    maskImg.src = `http://localhost:3055${image.maskImage}`;
+
+    maskImg.onload = () => {
+      canvas.width = maskImg.naturalWidth;
+      canvas.height = maskImg.naturalHeight;
+
+      ctx.drawImage(maskImg, 0, 0);
+
+      const link = document.createElement("a");
+      link.download = `mask-${image.name || image._id}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+
+    maskImg.onerror = () => {
+      console.error("Không thể tải ảnh mask");
+      toast.error("Không thể tải ảnh mask");
+    };
+  };
 
   const fetchImage = async () => {
     try {
@@ -75,10 +118,10 @@ const AnalysisImage = () => {
             });
           } else {
             stats = {
-              normal: 0,
-              abnormal: 0,
-              normal_2x: 0,
-              abnormal_2x: 0,
+              Normal: 0,
+              Abnormal: 0,
+              Normal_2x: 0,
+              Abnormal_2x: 0,
             };
             img.bacteriaData?.forEach((cell) => {
               if (cell.type && stats.hasOwnProperty(cell.type)) {
@@ -225,6 +268,14 @@ const AnalysisImage = () => {
                 e.target.src = "/uploads/mau.jpeg";
               }}
             />
+            <div className="mt-2 text-center">
+              <button
+                className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 shadow"
+                onClick={handleDownloadMask}
+              >
+                Tải ảnh mask
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -256,7 +307,7 @@ const AnalysisImage = () => {
                   lensType={measurement.lensType}
                   points={image.points}
                   showSquares={showSquares}
-                  onCellClick={(cell) => setSelectedCell(cell)}
+                  onCellClick={(cell) => handleCellClick(cell)}
                   modalOpen={modalOpen}
                 />
               </TransformComponent>
@@ -287,10 +338,10 @@ const AnalysisImage = () => {
             </h3>
             <img
               src={`data:image/png;base64,${selectedCell.image}`}
-              alt={`Bacteria ${selectedCell.cell_id}`}
-              className="max-w-full max-h-[85vh] object-contain mb-4"
+              alt={`Nấm men ${selectedCell.cell_id}`}
+              className="w-28 h-28 object-contain mx-auto mb-4 rounded shadow"
             />
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="space-y-2 text-sm">
               <div>
                 <strong>Diện tích:</strong> {selectedCell.area}
               </div>
@@ -301,8 +352,7 @@ const AnalysisImage = () => {
                 <strong>Độ tròn:</strong> {selectedCell.circularity}
               </div>
               <div>
-                <strong>Đường kính lồi:</strong>{" "}
-                {selectedCell.CE_diameterconvexity}
+                <strong>Đường kính lồi:</strong> {selectedCell.CE_diameter}
               </div>
               <div>
                 <strong>Trục lớn:</strong> {selectedCell.major_axis_length}
@@ -318,6 +368,7 @@ const AnalysisImage = () => {
                 {selectedCell.max_distance}
               </div>
             </div>
+
             <div className="flex gap-2 mt-4 flex-wrap">
               <button
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -428,12 +479,12 @@ const AnalysisImage = () => {
                     value={editedType}
                     onChange={(e) => setEditedType(e.target.value)}
                   >
-                    <option value="normal">Bình thường</option>
-                    <option value="abnormal">Bất thường</option>
-                    <option value="normal_2x">Nảy chồi bình thường</option>
-                    <option value="abnormal_2x">Nảy chồi bất thường</option>
-                    <option value="alive">Tế bào sống</option>
-                    <option value="dead">Tế bào chết</option>
+                    <option value="Normal">Bình thường</option>
+                    <option value="Abnormal">Bất thường</option>
+                    <option value="Normal_2x">Nảy chồi bình thường</option>
+                    <option value="Abnormal_2x">Nảy chồi bất thường</option>
+                    <option value="Alive">Tế bào sống</option>
+                    <option value="Dead">Tế bào chết</option>
                   </select>
                 </div>
                 <div className="flex gap-2">
@@ -477,19 +528,19 @@ const AnalysisImage = () => {
               <>
                 <div className="flex justify-between">
                   <span>Tế bào bình thường:</span>
-                  <span>{cellStats.normal}</span>
+                  <span>{cellStats.Normal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tế bào bất thường:</span>
-                  <span>{cellStats.abnormal}</span>
+                  <span>{cellStats.Abnormal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Nảy chồi bình thường:</span>
-                  <span>{cellStats.normal_2x}</span>
+                  <span>{cellStats.Normal_2x}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Nảy chồi bất thường:</span>
-                  <span>{cellStats.abnormal_2x}</span>
+                  <span>{cellStats.Abnormal_2x}</span>
                 </div>
               </>
             )}

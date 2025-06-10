@@ -32,24 +32,31 @@ const BacteriaImage = ({
     baseImg.onload = () => {
       ctx.drawImage(baseImg, 0, 0);
 
-      // Vẽ cell
-      bacteriaData.forEach((cell) => {
+      // Vẽ cell (bounding box + số thứ tự)
+      bacteriaData.forEach((cell, index) => {
         const color =
-          cell.type === "normal"
+          cell.type === "Normal"
             ? "green"
-            : cell.type === "abnormal_2x"
+            : cell.type === "Abnormal_2x"
             ? "blue"
-            : cell.type === "normal_2x"
+            : cell.type === "Normal_2x"
             ? "blue"
-            : cell.type === "abnormal"
+            : cell.type === "Abnormal"
             ? "red"
-            : cell.type === "alive"
+            : cell.type === "Alive"
             ? "green"
             : "red";
 
         ctx.strokeStyle = color;
         ctx.lineWidth = 1;
         ctx.strokeRect(cell.x, cell.y, cell.width, cell.height);
+
+        // Vẽ số thứ tự
+        ctx.fillStyle = "black";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(`${index + 1}`, cell.x + cell.width / 2, cell.y - 16);
       });
 
       // Tải ảnh
@@ -163,15 +170,15 @@ const BacteriaImage = ({
       {imageLoaded &&
         bacteriaData.map((cell, index) => {
           const color =
-            cell.type === "normal"
+            cell.type === "Normal"
               ? "green"
-              : cell.type === "abnormal_2x"
+              : cell.type === "Abnormal_2x"
               ? "blue"
-              : cell.type === "normal_2x"
+              : cell.type === "Normal_2x"
               ? "blue"
-              : cell.type === "abnormal"
+              : cell.type === "Abnormal"
               ? "red"
-              : cell.type === "alive"
+              : cell.type === "Alive"
               ? "green"
               : "red";
 

@@ -21,25 +21,11 @@ import {
 import { useSearchParams } from "react-router-dom";
 
 const COLORS = {
-  normal: "#60a5fa",
-  abnormal: "#f97316",
-  normal_2x: "#10b981",
-  abnormal_2x: "#facc15",
+  Normal: "#60a5fa",
+  Abnormal: "#f97316",
   alive: "#34d399",
   dead: "#f87171",
 };
-
-const PDF_TABLE_HEADERS = [
-  "Tên ảnh",
-  "Normal",
-  "Abnormal",
-  "Normal 2x",
-  "Abnormal 2x",
-  "Tế bào sống",
-  "Tế bào chết",
-  "% Sống",
-  "% Chết",
-];
 
 const StatisticsByMeasurement = () => {
   const [data, setData] = useState([]);
@@ -137,7 +123,7 @@ const StatisticsByMeasurement = () => {
             total = item.alive + item.dead;
           } else {
             total =
-              item.normal + item.abnormal + item.normal_2x + item.abnormal_2x;
+              item.Normal + item.Abnormal;
           }
           return {
             ...item,
@@ -334,12 +320,6 @@ const StatisticsByMeasurement = () => {
                         <th className="px-4 py-2 text-center font-medium">
                           Tế bào bất thường
                         </th>
-                        <th className="px-4 py-2 text-center font-medium">
-                          Tế bào nảy chồi bình thường
-                        </th>
-                        <th className="px-4 py-2 text-center font-medium">
-                          Tế bào nảy chồi bất thường
-                        </th>
                       </>
                     )}
                     <th className="px-4 py-2 text-center font-medium">Tổng</th>
@@ -364,20 +344,12 @@ const StatisticsByMeasurement = () => {
                       ) : (
                         <>
                           <td className="px-4 py-2 text-center">
-                            {row.normal}(
-                            {((row.normal / row.total) * 100).toFixed(2)}%)
+                            {row.Normal}(
+                            {((row.Normal / row.total) * 100).toFixed(2)}%)
                           </td>
                           <td className="px-4 py-2 text-center">
-                            {row.abnormal} (
-                            {((row.abnormal / row.total) * 100).toFixed(2)}%)
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            {row.normal_2x} (
-                            {((row.normal_2x / row.total) * 100).toFixed(2)}%)
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            {row.abnormal_2x} (
-                            {((row.abnormal_2x / row.total) * 100).toFixed(2)}%)
+                            {row.Abnormal} (
+                            {((row.Abnormal / row.total) * 100).toFixed(2)}%)
                           </td>
                         </>
                       )}
