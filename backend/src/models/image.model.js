@@ -41,6 +41,9 @@ const ImageSchema = new mongoose.Schema({
       type: {
         type: String,
       },
+      editType:{
+        type: String,
+      },
       wrongType:{
         type: Boolean,
         default: false,

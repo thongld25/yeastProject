@@ -29,6 +29,7 @@ import StatisticsByExperimentManager from "./pages/Manager/StatisticsByExperimen
 import StatisticsByMeasurementManager from "./pages/Manager/StatisticsByMeasurementManager";
 import MeasurementOfManager from "./pages/Manager/MeasurementOfManager";
 import ImageOfManager from "./pages/Manager/ImageOfManager";
+import ChangePassword from "./pages/Auth/ChangePassword";
 
 const App = () => {
   return (
@@ -102,6 +103,10 @@ const App = () => {
                 path="/manager/statistics/by-measurement"
                 element={<StatisticsByMeasurementManager />}
               />
+              <Route
+                path="/change-password"
+                element={<ChangePassword />}
+              />
             </Route>
             {/* Default Route */}
             <Route path="/" element={<Root />} />
@@ -131,7 +136,7 @@ const Root = () => {
   }
 
   if (user.role === "admin") {
-    return <Navigate to="/admin/dashboard" />;
+    return <Navigate to="/admin/factory" />;
   } else if (user.role === "manager") {
     return <Navigate to="/manager/dashboard" />;
   } else {

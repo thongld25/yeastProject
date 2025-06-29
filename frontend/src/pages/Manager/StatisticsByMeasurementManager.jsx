@@ -24,29 +24,15 @@ import {
 } from "../../services/MeasurementService";
 import { useSearchParams } from "react-router-dom";
 import { getEmployeeInFactoryOfManager } from "../../services/UserService";
+import { useUserAuth } from "../../hooks/useUserAuth";
 
 const COLORS = {
-  normal: "#60a5fa",
-  abnormal: "#f97316",
-  normal_2x: "#10b981",
-  abnormal_2x: "#facc15",
-  alive: "#34d399",
-  dead: "#f87171",
+  Normal: "#60a5fa",
+  Abnormal: "#f97316"
 };
 
-const PDF_TABLE_HEADERS = [
-  "Tên ảnh",
-  "Normal",
-  "Abnormal",
-  "Normal 2x",
-  "Abnormal 2x",
-  "Tế bào sống",
-  "Tế bào chết",
-  "% Sống",
-  "% Chết",
-];
-
 const StatisticsByMeasurementManager = () => {
+  useUserAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -158,20 +144,18 @@ const StatisticsByMeasurementManager = () => {
         const enrichedData = statictis.map((item) => {
           let total;
           if (imageType === "methylene") {
-            total = item.alive + item.dead;
+            total = item.Alive + item.Dead;
           } else {
-            total =
-              item.normal + item.abnormal + item.normal_2x + item.abnormal_2x;
+            total = item.Normal + item.Abnormal;
           }
           return {
             ...item,
-            total,
-            ratio_alive: total ? ((item.alive / total) * 100).toFixed(1) : "0",
-            ratio_dead: total ? ((item.dead / total) * 100).toFixed(1) : "0",
+            total
           };
         });
 
         setData(enrichedData);
+        console.log("Dữ liệu thống kê:", enrichedData);
       } catch (error) {
         console.error("Lỗi khi tải thống kê:", error);
       } finally {
@@ -380,12 +364,6 @@ const StatisticsByMeasurementManager = () => {
                         <th className="px-4 py-2 text-center font-medium">
                           Tế bào bất thường
                         </th>
-                        <th className="px-4 py-2 text-center font-medium">
-                          Tế bào nảy chồi bình thường
-                        </th>
-                        <th className="px-4 py-2 text-center font-medium">
-                          Tế bào nảy chồi bất thường
-                        </th>
                       </>
                     )}
                     <th className="px-4 py-2 text-center font-medium">Tổng</th>
@@ -411,20 +389,12 @@ const StatisticsByMeasurementManager = () => {
                       ) : (
                         <>
                           <td className="px-4 py-2 text-center">
-                            {row.normal}(
-                            {((row.normal / row.total) * 100).toFixed(2)}%)
+                            {row.Normal}(
+                            {((row.Normal / row.total) * 100).toFixed(2)}%)
                           </td>
                           <td className="px-4 py-2 text-center">
-                            {row.abnormal} (
-                            {((row.abnormal / row.total) * 100).toFixed(2)}%)
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            {row.normal_2x} (
-                            {((row.normal_2x / row.total) * 100).toFixed(2)}%)
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            {row.abnormal_2x} (
-                            {((row.abnormal_2x / row.total) * 100).toFixed(2)}%)
+                            {row.Abnormal} (
+                            {((row.Abnormal / row.total) * 100).toFixed(2)}%)
                           </td>
                         </>
                       )}

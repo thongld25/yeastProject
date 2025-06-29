@@ -19,6 +19,7 @@ import {
   getMeasurementById,
 } from "../../services/MeasurementService";
 import { useSearchParams } from "react-router-dom";
+import { useUserAuth } from "../../hooks/useUserAuth";
 
 const COLORS = {
   Normal: "#60a5fa",
@@ -28,6 +29,7 @@ const COLORS = {
 };
 
 const StatisticsByMeasurement = () => {
+  useUserAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");

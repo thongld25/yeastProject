@@ -11,6 +11,27 @@ class UserController {
     }).send(res);
   };
 
+  addUser = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Add user success!",
+      metadata: await UserService.addUser(req.body),
+    }).send(res);
+  };
+
+  changePassword = async (req, res, next) => {
+    const oldPassword = req.body.oldPassword;
+    const newPassword = req.body.newPassword;
+    const userId = req.user.userId;
+    new SuccessResponse({
+      message: "Change password success!",
+      metadata: await UserService.changePassword(
+        userId,
+        oldPassword,
+        newPassword
+      ),
+    }).send(res);
+  };
+
   getUserOfFactory = async (req, res, next) => {
     new SuccessResponse({
       message: "Get all factory success!",

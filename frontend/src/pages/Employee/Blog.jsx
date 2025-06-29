@@ -3,8 +3,10 @@ import DashbroardLayout from "../../components/layouts/DashbroardLayout";
 import nammen from "../../assets/images/nammen.jpg";
 import bia from "../../assets/images/bia.jpg";
 import banhmi from "../../assets/images/banhmi.jpg";
+import { useUserAuth } from "../../hooks/useUserAuth";
 
 const Blog = () => {
+  useUserAuth();
   return (
     <DashbroardLayout activeMenu="Bài viết">
       <div className="p-4 space-y-6 max-w-4xl mx-auto">

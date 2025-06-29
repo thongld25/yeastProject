@@ -16,8 +16,12 @@ import {
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import nunitoSansBase64 from "../../utils/nunito-sans-base64";
-import { getExperimentByUserId, getExperimentsOfEmployee } from "../../services/ExperimentService";
+import {
+  getExperimentByUserId,
+  getExperimentsOfEmployee,
+} from "../../services/ExperimentService";
 import { useSearchParams } from "react-router-dom";
+import { useUserAuth } from "../../hooks/useUserAuth";
 
 const COLORS = {
   Normal: "#60a5fa",
@@ -36,6 +40,7 @@ const PDF_TABLE_HEADERS = [
 ];
 
 const StatisticsByExperiment = () => {
+  useUserAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -258,19 +263,23 @@ const StatisticsByExperiment = () => {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-gray-800 border-b font-semibold">
-                        {item.name} 
+                        {item.name}
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.Normal} ({((item.Normal / item.total)*100).toFixed(2)} %)
+                        {item.Normal} (
+                        {((item.Normal / item.total) * 100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-semibold">
-                        {item.Abnormal} ({((item.Abnormal / item.total)*100).toFixed(2)} %)
+                        {item.Abnormal} (
+                        {((item.Abnormal / item.total) * 100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b text-green-600 font-semibold">
-                        {item.alive} ({((item.alive / item.total)*100).toFixed(2)} %)
+                        {item.alive} (
+                        {((item.alive / item.total) * 100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b text-red-600 font-semibold">
-                        {item.dead} ({((item.dead / item.total)*100).toFixed(2)} %)
+                        {item.dead} (
+                        {((item.dead / item.total) * 100).toFixed(2)} %)
                       </td>
                       <td className="px-4 py-3 text-sm text-center border-b font-bold">
                         {item.total} (100%)

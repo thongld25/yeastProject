@@ -40,7 +40,10 @@ const EmployeeOfFactory = () => {
     role: "employee",
     birthDate: "",
     gender: "male",
+    password: "",
+    confirmPassword: "",
   });
+
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
@@ -52,7 +55,7 @@ const EmployeeOfFactory = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const {email, ...updateData} = editingUser;
+      const { email, ...updateData } = editingUser;
       const res = await updateUser(editingUser._id, updateData); // cần tồn tại API updateUser
       console.log(res);
       if (res.status === 200) {
@@ -98,6 +101,14 @@ const EmployeeOfFactory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Kiểm tra mật khẩu
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Mật khẩu xác nhận không khớp!");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const res = await createUser(
         formData.email,
@@ -105,7 +116,8 @@ const EmployeeOfFactory = () => {
         formData.role,
         factoryId,
         formData.gender,
-        formData.birthDate
+        formData.birthDate,
+        formData.password, // truyền mật khẩu
       );
       toast.success("Thêm nhân viên thành công!");
       setOpen(false);
@@ -115,6 +127,8 @@ const EmployeeOfFactory = () => {
         role: "employee",
         birthDate: "",
         gender: "male",
+        password: "",
+        confirmPassword: "",
       });
       fetchUsers();
     } catch {
@@ -287,6 +301,44 @@ const EmployeeOfFactory = () => {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="Nhập email"
+                        required
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+
+                    {/* Mật khẩu */}
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Mật khẩu
+                      </label>
+                      <input
+                        type="password"
+                        id="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Nhập mật khẩu"
+                        required
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+
+                    {/* Xác nhận mật khẩu */}
+                    <div>
+                      <label
+                        htmlFor="confirmPassword"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Xác nhận mật khẩu
+                      </label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Nhập lại mật khẩu"
                         required
                         className="w-full px-3 py-2 border rounded"
                       />

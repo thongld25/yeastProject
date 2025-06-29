@@ -757,7 +757,7 @@ class ImageService {
 
     const image = await imageModel.updateOne(
       { _id: imageId, "bacteriaData.cell_id": cell_id },
-      { $set: { "bacteriaData.$.type": type } }
+      { $set: { "bacteriaData.$.editType": type } }
     );
     if (image.modifiedCount === 0) {
       throw new NotFoundError("Image or cell not found");
@@ -876,6 +876,67 @@ class ImageService {
   }
 
   static async drawContourToBase64(imagePath, bbox, contour) {
+    if (!imagePath || !bbox || !contour?.length) return null;
+
+    const { createCanvas, loadImage } = require("canvas");
+
+    try {
+      const img = await loadImage(imagePath); // Load ảnh gốc
+
+      // Tạo canvas full size theo ảnh gốc
+      const fullCanvas = createCanvas(img.width, img.height);
+      const fullCtx = fullCanvas.getContext("2d");
+
+      // Vẽ ảnh gốc
+      fullCtx.drawImage(img, 0, 0);
+
+      // Vẽ contour lên ảnh gốc với màu đen nhạt
+      fullCtx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+      fullCtx.lineWidth = 2;
+      fullCtx.beginPath();
+      fullCtx.moveTo(contour[0].x, contour[0].y);
+      contour.slice(1).forEach((pt) => {
+        fullCtx.lineTo(pt.x, pt.y);
+      });
+      fullCtx.closePath();
+      fullCtx.stroke();
+
+      const debugPath = path.join(__dirname, "debug_full_with_contour.png");
+      const out = fs.createWriteStream(debugPath);
+      const stream = fullCanvas.createPNGStream();
+      stream.pipe(out);
+      out.on("finish", () =>
+        console.log("🖼️ Full image with contour saved:", debugPath)
+      );
+
+      // Cắt ảnh từ canvas gốc sau khi đã vẽ contour
+      const { x, y, width, height } = bbox;
+      const croppedCanvas = createCanvas(width, height);
+      const croppedCtx = croppedCanvas.getContext("2d");
+
+      croppedCtx.drawImage(
+        fullCanvas,
+        x,
+        y,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height
+      );
+
+      // Xuất ra base64
+      const base64 = croppedCanvas.toDataURL().split(",")[1];
+      console.log("✅ Image with contour cropped, length:", base64.length);
+      return base64;
+    } catch (error) {
+      console.error("❌ Error drawing contour:", error.message);
+      return null;
+    }
+  }
+
+  static async drawContourToBase642(imagePath, bbox, contour) {
     if (!imagePath || !bbox || !contour?.length) return null;
 
     const { createCanvas, loadImage } = require("canvas");

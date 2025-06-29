@@ -12,7 +12,6 @@ import {
 } from "@headlessui/react";
 import { createFactory, getFactories } from "../../services/FactoryService";
 import toast from "react-hot-toast";
-import { ToastContainer } from "react-toastify";
 
 const Dashboard = () => {
   useUserAuth();

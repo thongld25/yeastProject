@@ -7,7 +7,8 @@ import {
   LuFactory,
   LuBookOpen,
   LuChartColumnBig,
-  LuContact
+  LuContact,
+  LuUserPen
 } from "react-icons/lu";
 
 import {
@@ -22,6 +23,12 @@ export const SIDE_MENU_DATA = [
     label: "Nhà máy",
     icon: LuFactory,
     path: "/admin/factory",
+  },
+  {
+    id: "02",
+    label: "Đổi mật khẩu",
+    icon: LuUserPen,
+    path: "/change-password",
   },
   {
     id: "03",
@@ -74,8 +81,14 @@ export const SIDE_MENU_USER_DATA = [
       },
     ],
   },
-  {
+    {
     id: "07",
+    label: "Đổi mật khẩu",
+    icon: LuUserPen,
+    path: "/change-password",
+  },
+  {
+    id: "08",
     label: "Đăng xuất",
     icon: LuLogOut,
     path: "/logout",
@@ -125,8 +138,14 @@ export const SIDE_MENU_MANAGER_DATA = [
       },
     ],
   },
-  {
+    {
     id: "07",
+    label: "Đổi mật khẩu",
+    icon: LuUserPen,
+    path: "/change-password",
+  },
+  {
+    id: "08",
     label: "Đăng xuất",
     icon: LuLogOut,
     path: "/logout",

@@ -34,6 +34,41 @@ const AnalysisImage = () => {
   const [reportMode, setReportMode] = useState(false);
   const [editedType, setEditedType] = useState("");
 
+  const handleExport = () => {
+    if (!image || !image.bacteriaData || image.bacteriaData.length === 0) {
+      toast.error("Không có dữ liệu để xuất");
+      return;
+    }
+    const data = image.bacteriaData;
+    // Tiêu đề CSV
+    const headers = ["STT", "x", "y", "height", "width", "AIType", "editType"];
+    const rows = [headers.join(",")];
+
+    // Duyệt qua từng phần tử và tạo dòng CSV
+    data.forEach((item, index) => {
+      const row = [
+        index + 1,
+        item.x,
+        item.y,
+        item.height,
+        item.width,
+        item.type,
+        item.editType,
+      ];
+      rows.push(row.join(","));
+    });
+
+    const csvContent = "\uFEFF" + rows.join("\n"); // \uFEFF giúp Excel đọc UTF-8
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cell_data.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleCellClick = async (cell) => {
     try {
       const res = await updateInfoBacteria(imageId, cell.cell_id);
@@ -46,6 +81,7 @@ const AnalysisImage = () => {
       }
     } catch (error) {
       console.error("Error fetching cell info:", error);
+      setSelectedCell(cell);
       toast.error("Lỗi khi lấy thông tin tế bào");
     }
   };
@@ -113,20 +149,35 @@ const AnalysisImage = () => {
           if (meas.imageType === "methylene") {
             stats = { alive: 0, dead: 0 };
             img.bacteriaData?.forEach((cell) => {
-              if (cell.type === "alive") stats.alive++;
-              else if (cell.type === "dead") stats.dead++;
+              if (
+                cell.editType
+                  ? cell.editType === "alive"
+                  : cell.type === "alive"
+              )
+                stats.alive++;
+              else if (
+                cell.editType ? cell.editType === "dead" : cell.type === "dead"
+              )
+                stats.dead++;
             });
           } else {
             stats = {
               Normal: 0,
               Abnormal: 0,
-              Normal_2x: 0,
-              Abnormal_2x: 0,
             };
             img.bacteriaData?.forEach((cell) => {
-              if (cell.type && stats.hasOwnProperty(cell.type)) {
-                stats[cell.type]++;
-              }
+              if (
+                cell.editType
+                  ? cell.editType === "Normal"
+                  : cell.type === "Normal"
+              )
+                stats.Normal++;
+              else if (
+                cell.editType
+                  ? cell.editType === "Abnormal"
+                  : cell.type === "Abnormal"
+              )
+                stats.Abnormal++;
             });
           }
           setCellStats(stats);
@@ -160,7 +211,7 @@ const AnalysisImage = () => {
 
   useEffect(() => {
     if (selectedCell) {
-      setEditedType(selectedCell.type || "");
+      setEditedType(selectedCell.editType || selectedCell.type || "");
       setEditMode(false);
     }
   }, [selectedCell]);
@@ -279,16 +330,23 @@ const AnalysisImage = () => {
           </div>
         )}
       </div>
-      {measurement?.lensType === "buồng đếm" && (
-        <div className="my-4">
+      <div className="my-4 flex gap-4">
+        {measurement?.lensType === "buồng đếm" && (
           <button
             className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
             onClick={() => setShowSquares((prev) => !prev)}
           >
             {showSquares ? "Ẩn 16 ô vuông" : "Hiện 16 ô vuông"}
           </button>
-        </div>
-      )}
+        )}
+
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          onClick={handleExport}
+        >
+          Xuất CSV
+        </button>
+      </div>
 
       {modalOpen && (
         <div
@@ -334,11 +392,11 @@ const AnalysisImage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold mb-2">
-              Vi khuẩn {selectedCell.cell_id}
+              Tế bào {selectedCell.cell_id}
             </h3>
             <img
               src={`data:image/png;base64,${selectedCell.image}`}
-              alt={`Nấm men ${selectedCell.cell_id}`}
+              alt={`Tế bào ${selectedCell.cell_id}`}
               className="w-28 h-28 object-contain mx-auto mb-4 rounded shadow"
             />
             <div className="space-y-2 text-sm">
@@ -481,8 +539,6 @@ const AnalysisImage = () => {
                   >
                     <option value="Normal">Bình thường</option>
                     <option value="Abnormal">Bất thường</option>
-                    <option value="Normal_2x">Nảy chồi bình thường</option>
-                    <option value="Abnormal_2x">Nảy chồi bất thường</option>
                     <option value="Alive">Tế bào sống</option>
                     <option value="Dead">Tế bào chết</option>
                   </select>
@@ -534,14 +590,6 @@ const AnalysisImage = () => {
                   <span>Tế bào bất thường:</span>
                   <span>{cellStats.Abnormal}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Nảy chồi bình thường:</span>
-                  <span>{cellStats.Normal_2x}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Nảy chồi bất thường:</span>
-                  <span>{cellStats.Abnormal_2x}</span>
-                </div>
               </>
             )}
           </div>
@@ -557,8 +605,6 @@ const AnalysisImage = () => {
         <div className="mt-4 flex flex-wrap gap-4">
           <LegendBox color="green" label="Bình thường" />
           <LegendBox color="red" label="Bất thường" />
-          <LegendBox color="blue" label="Nảy chồi bình thường" />
-          <LegendBox color="purple" label="Nảy chồi bất thường" />
         </div>
       )}
     </DashbroardLayout>

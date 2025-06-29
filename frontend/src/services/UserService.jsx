@@ -25,13 +25,14 @@ export async function createUser(
   role,
   factoryId,
   gender,
-  birthDate
+  birthDate,
+  password
 ) {
   try {
     const userId = localStorage.getItem("userId");
     const res = await axios.post(
-      `${API_BASE_URL}/user/add`,
-      { email, name, role, factoryId, gender, birthDate },
+      `${API_BASE_URL}/user/create`,
+      { email, name, role, factoryId, gender, birthDate, password },
       {
         headers: {
           "x-api-key": API_KEY,
@@ -87,7 +88,7 @@ export async function deleteUser(id) {
 export async function updateUser(id, updateData) {
   try {
     const userId = localStorage.getItem("userId");
-    const {name, role, gender, birthDate} = updateData;
+    const { name, role, gender, birthDate } = updateData;
     const res = await axios.put(
       `${API_BASE_URL}/user/update/${id}`,
       { name, role, gender, birthDate },
@@ -106,7 +107,7 @@ export async function updateUser(id, updateData) {
     throw error.response.data.message || "Failed to fetch user profile";
   }
 }
-  export async function getEmployeeInFactoryOfManager(){
+export async function getEmployeeInFactoryOfManager() {
   try {
     const userId = localStorage.getItem("userId");
     const res = await axios.get(`${API_BASE_URL}/user/manager/employee`, {
@@ -121,5 +122,27 @@ export async function updateUser(id, updateData) {
   } catch (error) {
     console.error("Error fetching user profile:", error);
     throw error.response.data.message || "Failed to fetch user profile";
+  }
+}
+
+export async function changePassword(oldPassword, newPassword) {
+  try {
+    const userId = localStorage.getItem("userId");
+    const res = await axios.post(
+      `${API_BASE_URL}/user/change-password`,
+      { userId, oldPassword, newPassword },
+      {
+        headers: {
+          "x-api-key": API_KEY,
+          "x-client-id": userId,
+          authorization: localStorage.getItem("accessToken"),
+          refreshtoken: localStorage.getItem("refreshToken"),
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error changing password:", error);
+    throw error.response.data.message || "Failed to change password";
   }
 }

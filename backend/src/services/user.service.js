@@ -96,6 +96,51 @@ class UserService {
     }
   };
 
+  static addUser = async ({
+    email,
+    name,
+    password,
+    role,
+    factoryId,
+    gender,
+    birthDate
+  }) => {
+    const foundUser = await UserService.findByEmail({ email });
+    if (foundUser) throw new BadRequestError("Email already exists");
+    const foundFactory = await factoryModel.findById(factoryId);
+    if (!foundFactory) throw new BadRequestError("Factory not found");
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newUser = await userModel.create({
+      email,
+      name,
+      password: passwordHash,
+      role,
+      factoryId,
+      gender,
+      birthDate: new Date(birthDate),
+    });
+
+    return newUser;
+  };
+
+  static changePassword = async (userId, oldPassword, newPassword) => {
+    const user = await userModel.findById(userId);
+    if (!user) throw new BadRequestError("Tài khoản không tồn tại");
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) throw new BadRequestError("Mật khẩu cũ không đúng");
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { password: newPasswordHash },
+      { new: true }
+    );
+    if (!updatedUser) throw new BadRequestError("Cập nhật mật khẩu thất bại");
+    return {
+      message: "Mật khẩu đã được cập nhật thành công",
+      user: updatedUser,
+    };
+  }
+
   static findUserOfFactory = async (factoryId) => {
     const users = await userModel.find({ factoryId }).lean();
     if (!users) throw new BadRequestError("Users not found");
